@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Application Dark Theme -->
+    <style name="Theme.FixitBhai" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Brand Colors -->
+        <item name="colorPrimary">#0F62FE</item>
+        <item name="colorPrimaryVariant">#0043CE</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- Secondary / Accent -->
+        <item name="colorSecondary">#4589FF</item>
+        <item name="colorSecondaryVariant">#002D9C</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+
+        <!-- Background & Surface -->
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+
+        <!-- System Bar Styling -->
+        <item name="android:statusBarColor">#121212</item>
+        <item name="android:navigationBarColor">#121212</item>
+    </style>
+
+    <!-- Professional Custom Card Style -->
+    <style name="CleanCardStyle">
+        <item name="cardBackgroundColor">#1E1E1E</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardMaxElevation">4dp</item>
+    </style>
+
+    <!-- Professional Custom Primary Button -->
+    <style name="CleanPrimaryButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#0F62FE</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:paddingVertical">12dp</item>
+    </style>
+</resources>
