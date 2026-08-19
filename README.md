@@ -8,7 +8,7 @@ By utilizing dynamic string matching and predefined exclusion rules, the applica
 
 ## Downloads
 
-* **Direct APK Download:** [Download Latest Release](https://github.com/YOUR_USERNAME/FixitBhai/releases/latest)
+* **Direct APK Download:** [Download Latest Release](https://github.com/ShashankS1011/FixitBhai/releases/download/v1.0/app-debug.apk)
 
 ---
 
