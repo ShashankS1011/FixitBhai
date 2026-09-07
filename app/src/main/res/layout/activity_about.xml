@@ -161,12 +161,16 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Developer Information -->
+        <!-- Developer Information (Clickable) -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardDeveloper"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="24dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             app:cardBackgroundColor="#1E1E1E"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp">
@@ -194,6 +198,14 @@
                     android:textColor="#E0E0E0"
                     android:textSize="15sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Tap to view GitHub Repository ➔"
+                    android:textColor="#64B5F6"
+                    android:textSize="13sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

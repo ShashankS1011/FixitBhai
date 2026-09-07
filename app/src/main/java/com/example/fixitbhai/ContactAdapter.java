@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,7 +18,7 @@ import java.util.List;
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> implements android.widget.Filterable {
 
     private List<Contact> contactList;
-    private List<Contact> contactListFull; // Backup list for filtering
+    private List<Contact> contactListFull;
 
     public ContactAdapter(List<Contact> contactList) {
         this.contactList = contactList;
@@ -40,9 +39,15 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
         holder.tvName.setText(contact.getName());
         holder.tvPhone.setText(contact.getPhone());
-        holder.tvCategory.setText(contact.getCategory());
 
-        // 1. Direct Call Action
+        // Card Click Listener -> Detail View
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, ContactDetailActivity.class);
+            intent.putExtra("EXTRA_CONTACT", contact);
+            context.startActivity(intent);
+        });
+
+        // Call Action
         if (holder.btnCall != null) {
             holder.btnCall.setOnClickListener(v -> {
                 Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -51,28 +56,10 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             });
         }
 
-        // 2. WhatsApp Action
-        if (holder.btnWhatsapp != null) {
-            holder.btnWhatsapp.setOnClickListener(v -> {
-                String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
-                if (cleanPhone.length() == 10) {
-                    cleanPhone = "91" + cleanPhone; // Country code (+91)
-                }
-
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse("https://api.whatsapp.com/send?phone=" + cleanPhone + "&text="));
-                    context.startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(context, "WhatsApp is not installed.", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        // 3. Native Share Contact Action
+        // Native Share Action
         if (holder.btnShare != null) {
             holder.btnShare.setOnClickListener(v -> {
-                String shareMessage = "Contact Details:\n" +
+                String shareMessage = "FixitBhai Technician Contact:\n" +
                         "Name: " + contact.getName() + "\n" +
                         "Service: " + contact.getCategory() + "\n" +
                         "Phone: " + contact.getPhone();
@@ -90,7 +77,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         return contactList != null ? contactList.size() : 0;
     }
 
-    // Call this custom method in MainActivity whenever contactList is modified
     public void updateData(List<Contact> newList) {
         this.contactList = newList;
         this.contactListFull = new ArrayList<>(newList);
@@ -138,16 +124,14 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     };
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvPhone, tvCategory;
-        ImageButton btnCall, btnWhatsapp, btnShare;
+        TextView tvName, tvPhone;
+        ImageButton btnCall, btnShare;
 
         public ContactViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvName);
             tvPhone = itemView.findViewById(R.id.tvPhone);
-            tvCategory = itemView.findViewById(R.id.tvCategory);
             btnCall = itemView.findViewById(R.id.btnCall);
-            btnWhatsapp = itemView.findViewById(R.id.btnWhatsapp);
             btnShare = itemView.findViewById(R.id.btnShare);
         }
     }

@@ -35,6 +35,12 @@ public class ContactDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contact_detail);
 
+        initViews();
+        extractIntentData();
+        setupListeners();
+    }
+
+    private void initViews() {
         tvName = findViewById(R.id.tvContactName);
         tvPhone = findViewById(R.id.tvContactPhone);
         tvCategory = findViewById(R.id.tvContactCategory);
@@ -45,23 +51,29 @@ public class ContactDetailActivity extends AppCompatActivity {
         btnShareText = findViewById(R.id.btnShareText);
         btnShareQR = findViewById(R.id.btnShareQR);
         btnSave = findViewById(R.id.btnSave);
+    }
 
+    private void extractIntentData() {
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_CONTACT")) {
             Contact contact = (Contact) intent.getSerializableExtra("EXTRA_CONTACT");
             if (contact != null) {
-                name = contact.getName();
-                phone = contact.getPhone();
-                category = contact.getCategory();
+                name = contact.getName() != null ? contact.getName() : "Unknown";
+                phone = contact.getPhone() != null ? contact.getPhone() : "N/A";
+                category = contact.getCategory() != null ? contact.getCategory() : "General";
 
                 tvName.setText(name);
                 tvPhone.setText(phone);
                 tvCategory.setText(category);
             }
         }
+    }
 
+    private void setupListeners() {
         cbDoNotCall.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            tvWarningBadge.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            if (tvWarningBadge != null) {
+                tvWarningBadge.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            }
         });
 
         btnShareText.setOnClickListener(v -> shareContactAsText());

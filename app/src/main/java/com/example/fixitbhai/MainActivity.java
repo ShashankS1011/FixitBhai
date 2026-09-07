@@ -36,40 +36,42 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "FixitBhaiPrefs";
     private static final String KEY_CONTACT_LIST = "SavedContacts";
-    // Unique identifier for the contact permission request
     private static final int PERMISSION_REQUEST_READ_CONTACTS = 100;
 
     private ContactAdapter adapter;
     private List<Contact> contactList;
-    private ChipGroup categoryChipGroup;
+
+    // UI View References strictly matched to XML
+    private ChipGroup chipGroupCategories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Bind UI Views
-        categoryChipGroup = findViewById(R.id.categoryChipGroup);
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
+        // 1. Bind UI Views according to XML ID attributes
+        chipGroupCategories = findViewById(R.id.chipGroupCategories);
+        RecyclerView recyclerViewContacts = findViewById(R.id.recyclerViewContacts);
         ImageButton btnAbout = findViewById(R.id.btnAbout);
-        FloatingActionButton fabImport = findViewById(R.id.fabImport);
+        FloatingActionButton btnSearch = findViewById(R.id.btnSearch);
 
-        // Initialize contact list
+        // Configure RecyclerView
+        recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
+
+        // Initialize contact dataset
         contactList = new ArrayList<>();
 
-        // 1. Load saved contacts from storage
+        // 2. Load cached contacts from local storage
         loadContactsFromStorage();
 
-        // 2. Setup RecyclerView Adapter
+        // 3. Setup RecyclerView Adapter
         adapter = new ContactAdapter(contactList);
-        recyclerView.setAdapter(adapter);
+        recyclerViewContacts.setAdapter(adapter);
 
-        // 3. New: Check and request permission before autoscan
+        // 4. Check permissions and scan contacts on initial load
         checkContactPermissionAndScan(false);
 
-        // 4. Click Listeners
+        // 5. Setup Click Listeners
         if (btnAbout != null) {
             btnAbout.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, AboutActivity.class);
@@ -77,58 +79,41 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        if (fabImport != null) {
-            // Trigger permission check and scan when FAB is clicked (showToast=true)
-            fabImport.setOnClickListener(v -> checkContactPermissionAndScan(true));
+        if (btnSearch != null) {
+            btnSearch.setOnClickListener(v -> checkContactPermissionAndScan(true));
         }
     }
 
     // --- Permission Handling ---
 
-    /**
-     * Checks if READ_CONTACTS permission is granted.
-     * If yes, proceeds to scan. If no, requests it from the user.
-     */
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
-        // Check if permission is already granted
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
                 == PackageManager.PERMISSION_GRANTED) {
-            // Permission is granted, we can safely scan
             importContactsFromPhone(showToastIfNoNew);
         } else {
-            // Permission is NOT granted, request it from the user
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_CONTACTS},
                     PERMISSION_REQUEST_READ_CONTACTS);
         }
     }
 
-    /**
-     * Callback received when the user responds to the permission request dialog.
-     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
-            // Check if the user granted the permission
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted! Start the scan. (Use showToast=true here as it's a direct result of user action)
                 Toast.makeText(this, "Permission granted. Scanning contacts...", Toast.LENGTH_SHORT).show();
                 importContactsFromPhone(true);
             } else {
-                // Permission denied. Explain to the user why the feature won't work.
-                Toast.makeText(this, "Permission denied. Fixit Bhai cannot import technician contacts without this permission.", Toast.LENGTH_LONG).show();
-
-                // If permission is denied, ensure chips are refreshed (showing only "All" and saved contacts)
+                Toast.makeText(this, "Permission denied. Cannot import contacts without permission.", Toast.LENGTH_LONG).show();
                 refreshCategoryChips();
             }
         }
     }
 
-    // --- Core Logic ---
+    // --- Storage & Dynamic UI Logic ---
 
-    // Loads saved contacts from local storage (SharedPreferences)
     private void loadContactsFromStorage() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String json = prefs.getString(KEY_CONTACT_LIST, null);
@@ -144,7 +129,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Saves contacts permanently to SharedPreferences
     private void saveContactsToStorage() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
@@ -156,19 +140,18 @@ public class MainActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    // Rebuilds dynamic category chips from the current contact list
     private void refreshCategoryChips() {
-        categoryChipGroup.removeAllViews();
+        chipGroupCategories.removeAllViews();
 
-        // "All" Category Chip
+        // Default "All" Category Chip
         Chip allChip = new Chip(this);
         allChip.setText("All");
         allChip.setCheckable(true);
         allChip.setChecked(true);
-        allChip.setOnClickListener(v -> adapter.getFilter().filter((CharSequence) ""));
-        categoryChipGroup.addView(allChip);
+        allChip.setOnClickListener(v -> adapter.getFilter().filter(""));
+        chipGroupCategories.addView(allChip);
 
-        // Extract unique service categories
+        // Get unique categories from current contact dataset
         Set<String> categories = new LinkedHashSet<>();
         for (Contact contact : contactList) {
             if (contact.getCategory() != null && !contact.getCategory().trim().isEmpty()) {
@@ -176,66 +159,60 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Add dynamic category chips
+        // Dynamically append chip items to ChipGroup
         for (String categoryName : categories) {
             Chip categoryChip = new Chip(this);
             categoryChip.setText(categoryName);
             categoryChip.setCheckable(true);
-            categoryChip.setOnClickListener(v -> adapter.getFilter().filter((CharSequence) categoryName));
-            categoryChipGroup.addView(categoryChip);
+            categoryChip.setOnClickListener(v -> adapter.getFilter().filter(categoryName));
+            chipGroupCategories.addView(categoryChip);
         }
     }
 
-    // Auto-scans contacts and shows them directly on the main screen
-    // Note: The priority order in serviceKeywords has been updated. Generic fallbacks are last.
     private void importContactsFromPhone(boolean showToast) {
         String[] serviceKeywords = {
-                // HIGH PRIORITY / Specific Services First (Matches "sujeet ac service" to AC, not Service)
+                // High Priority Trades
                 "ac repair", "ac service", "ac", "aircon", "air conditioner",
                 "ro repair", "ro service", "ro", "water purifier",
                 "tv repair", "tv", "television", "led tv",
 
-                // Basic Trades & Household Technicians
+                // Basic Trades
                 "plumber", "electrician", "carpenter", "painter", "mistri", "mistry",
                 "mason", "welder", "glazier", "fabricator", "roofer", "tiler", "pop",
                 "plaster", "contractor", "hardware", "builder",
 
-                // Appliances & Electronics
+                // Home Appliances
                 "washing machine", "washer", "dryer", "fridge", "refrigerator",
                 "appliance", "microwave", "oven", "chimney", "geyser", "water heater",
                 "inverter", "battery", "generator", "cooler", "air cooler", "fan", "dishwasher",
 
-                // Transport & Vehicles
+                // Automotive Services
                 "mechanic", "garage", "puncture", "puncture wala", "tyre", "tire",
                 "auto", "cab", "driver", "taxi", "crane", "towing", "denter",
                 "painter auto", "wheel alignment", "car service", "bike service",
 
-                // Cleaning, Pest & Sanitation
+                // Sanitation & Maintenance
                 "cleaner", "housekeeper", "pest control", "disinfection", "septic",
                 "tank cleaner", "sofa cleaning", "carpet cleaning", "maid", "cook",
 
-                // Outdoor & Heavy Work
+                // Machinery & Borewell
                 "gardener", "mali", "borewell", "pump", "excavator",
 
-                // LOW PRIORITY / Generic Fallbacks (Keep at the very bottom!)
+                // Generic Fallbacks
                 "technician", "installation", "maintenance", "fitting", "repair", "service", "fix", "helper", "vendor", "supplier"
         };
 
         String[] relativeBlacklist = {
-                // Immediate & Extended Family (Hindi / Regional Terms)
                 "chacha", "chachi", "mama", "mami", "bua", "fufa", "tau", "tai",
                 "masi", "mausa", "bhaiya", "bhai", "didi", "di", "dadi", "dada",
                 "nani", "nana", "kaka", "kaki", "bhabhi", "jija", "jijaji", "saas",
                 "sasur", "devar", "nanad", "sala", "sali", "beta", "beti", "pota",
                 "poti", "natina", "nati", "bhanja", "bhanji", "bhatija", "bhatiji",
-
-                // English Family Terms
                 "uncle", "aunt", "aunty", "cousin", "bro", "brother", "sis",
                 "sister", "mom", "mummy", "dad", "papa", "pop", "son", "daughter",
                 "grandma", "grandpa", "mother", "father", "husband", "wife", "niece", "nephew"
         };
 
-        // Set up deduplication sets
         Set<String> existingNumbers = new HashSet<>();
         Set<String> existingNames = new HashSet<>();
 
@@ -250,10 +227,8 @@ public class MainActivity extends AppCompatActivity {
 
         ContentResolver contentResolver = getContentResolver();
 
-        // Final sanity check before querying
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
                 != PackageManager.PERMISSION_GRANTED) {
-            // This should not happen if called correctly, but prevent crash just in case
             refreshCategoryChips();
             return;
         }
@@ -278,12 +253,10 @@ public class MainActivity extends AppCompatActivity {
                 String lowerName = name.toLowerCase().trim();
                 String cleanNumber = normalizePhoneNumber(number);
 
-                // Skip existing contacts
                 if (existingNumbers.contains(cleanNumber) || existingNames.contains(lowerName)) {
                     continue;
                 }
 
-                // Skip family relatives
                 boolean isRelative = false;
                 for (String relative : relativeBlacklist) {
                     if (lowerName.contains(relative)) {
@@ -293,12 +266,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (isRelative) continue;
 
-                // Match service keyword using whole word boundaries (\b)
                 String matchedCategory = null;
                 for (String keyword : serviceKeywords) {
                     String regex = "(?i).*\\b" + Pattern.quote(keyword) + "\\b.*";
                     if (lowerName.matches(regex)) {
-                        // Map short abbreviations to clean category titles
                         if (keyword.equalsIgnoreCase("ac") || keyword.equalsIgnoreCase("ac repair") || keyword.equalsIgnoreCase("ac service")) {
                             matchedCategory = "AC Repair";
                         } else if (keyword.equalsIgnoreCase("ro") || keyword.equalsIgnoreCase("ro repair") || keyword.equalsIgnoreCase("ro service")) {
@@ -308,13 +279,13 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             matchedCategory = capitalizeWords(keyword);
                         }
-                        break; // Stop at the first (Highest Priority) match
+                        break;
                     }
                 }
 
                 if (matchedCategory != null) {
                     Contact newContact = new Contact(name, number, matchedCategory);
-                    contactList.add(0, newContact); // Add to top of the list
+                    contactList.add(0, newContact);
 
                     existingNumbers.add(cleanNumber);
                     existingNames.add(lowerName);
@@ -325,7 +296,6 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
         }
 
-        // Sync adapter data backup and update category chips
         adapter.updateData(contactList);
         refreshCategoryChips();
 
@@ -339,13 +309,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- Utilities ---
+    // --- Helper Methods ---
 
     private String normalizePhoneNumber(String rawNumber) {
         if (rawNumber == null) return "";
-        // Keep only digits
         String digitsOnly = rawNumber.replaceAll("[^0-9]", "");
-        // Handle potential country codes by keeping only the last 10 digits
         if (digitsOnly.length() > 10) {
             return digitsOnly.substring(digitsOnly.length() - 10);
         }
