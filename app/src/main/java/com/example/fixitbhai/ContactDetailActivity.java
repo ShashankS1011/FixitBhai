@@ -15,6 +15,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.zxing.BarcodeFormat;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
@@ -24,16 +26,24 @@ public class ContactDetailActivity extends AppCompatActivity {
     private RatingBar ratingBar;
     private CheckBox cbDoNotCall;
     private EditText etNotes;
-    private Button btnShareText, btnShareQR, btnSave;
+    private Button btnShareText, btnShareQR, btnSave, btnDelete;
 
     private String name = "";
     private String phone = "";
     private String category = "";
+    private String city = "Lucknow";
+    private boolean isCloud = false; // Added to track cloud status
+
+    private DatabaseHelper dbHelper;
+    private FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contact_detail);
+
+        dbHelper = new DatabaseHelper(this);
+        firestore = FirebaseFirestore.getInstance();
 
         initViews();
         extractIntentData();
@@ -51,49 +61,121 @@ public class ContactDetailActivity extends AppCompatActivity {
         btnShareText = findViewById(R.id.btnShareText);
         btnShareQR = findViewById(R.id.btnShareQR);
         btnSave = findViewById(R.id.btnSave);
+        btnDelete = findViewById(R.id.btnDelete); // FIXED: Added this so delete button works
     }
 
     private void extractIntentData() {
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_CONTACT")) {
-            Contact contact = (Contact) intent.getSerializableExtra("EXTRA_CONTACT");
+            Contact contact;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                contact = intent.getSerializableExtra("EXTRA_CONTACT", Contact.class);
+            } else {
+                contact = (Contact) intent.getSerializableExtra("EXTRA_CONTACT");
+            }
             if (contact != null) {
                 name = contact.getName() != null ? contact.getName() : "Unknown";
                 phone = contact.getPhone() != null ? contact.getPhone() : "N/A";
                 category = contact.getCategory() != null ? contact.getCategory() : "General";
+                city = contact.getCity() != null ? contact.getCity() : "Lucknow";
+                isCloud = contact.isCloud(); // Extract cloud status
 
-                tvName.setText(name);
-                tvPhone.setText(phone);
-                tvCategory.setText(category);
+                if (tvName != null) tvName.setText(name);
+                if (tvPhone != null) tvPhone.setText(phone);
+                if (tvCategory != null) tvCategory.setText(category + " • " + city);
+
+                if (ratingBar != null) ratingBar.setRating(contact.getRating());
+                if (etNotes != null) etNotes.setText(contact.getNotes());
+                if (cbDoNotCall != null) {
+                    cbDoNotCall.setChecked(contact.isDoNotCall());
+                    if (tvWarningBadge != null) {
+                        tvWarningBadge.setVisibility(contact.isDoNotCall() ? View.VISIBLE : View.GONE);
+                    }
+                }
             }
         }
     }
 
     private void setupListeners() {
-        cbDoNotCall.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (tvWarningBadge != null) {
-                tvWarningBadge.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            }
-        });
+        if (cbDoNotCall != null) {
+            cbDoNotCall.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (tvWarningBadge != null) {
+                    tvWarningBadge.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                }
+            });
+        }
 
-        btnShareText.setOnClickListener(v -> shareContactAsText());
-        btnShareQR.setOnClickListener(v -> showQRCodeDialog());
+        if (btnShareText != null) btnShareText.setOnClickListener(v -> shareContactAsText());
+        if (btnShareQR != null) btnShareQR.setOnClickListener(v -> showQRCodeDialog());
+        if (btnSave != null) btnSave.setOnClickListener(v -> saveContactChanges());
+        if (btnDelete != null) btnDelete.setOnClickListener(v -> confirmAndDeleteContact());
+    }
 
-        btnSave.setOnClickListener(v -> {
-            Toast.makeText(this, "Contact details updated", Toast.LENGTH_SHORT).show();
-            finish();
-        });
+    private void saveContactChanges() {
+        float rating = ratingBar != null ? ratingBar.getRating() : 0.0f;
+        String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
+        boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
+
+        // 1. Update SQLite Local Storage
+        dbHelper.updateContactDetails(phone, rating, notes, isDoNotCall);
+
+        // 2. Sync to Firebase Cloud Firestore
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId != null) {
+            // FIXED: Using the 5-parameter constructor to match your updated Contact class
+            Contact updatedContact = new Contact(name, phone, category, city, isCloud);
+            updatedContact.setRating(rating);
+            updatedContact.setNotes(notes);
+            updatedContact.setDoNotCall(isDoNotCall);
+
+            firestore.collection("users")
+                    .document(userId)
+                    .collection("contacts")
+                    .document(phone)
+                    .set(updatedContact.toMap());
+        }
+
+        Toast.makeText(this, "Contact details updated successfully", Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private void confirmAndDeleteContact() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Contact")
+                .setMessage("Are you sure you want to delete " + name + " from local storage and cloud backup?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteContact())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteContact() {
+        // 1. Delete from SQLite local database
+        dbHelper.deleteContact(phone);
+
+        // 2. Delete from Firestore if authenticated
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId != null) {
+            firestore.collection("users")
+                    .document(userId)
+                    .collection("contacts")
+                    .document(phone)
+                    .delete();
+        }
+
+        Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show();
+        finish();
     }
 
     private void shareContactAsText() {
-        float rating = ratingBar.getRating();
-        String notes = etNotes.getText().toString().trim();
-        boolean isDoNotCall = cbDoNotCall.isChecked();
+        float rating = ratingBar != null ? ratingBar.getRating() : 0;
+        String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
+        boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
 
         StringBuilder shareBody = new StringBuilder();
         shareBody.append("FixitBhai Service Contact\n\n");
         shareBody.append("Name: ").append(name).append("\n");
         shareBody.append("Service: ").append(category).append("\n");
+        shareBody.append("City: ").append(city).append("\n");
         shareBody.append("Phone: ").append(phone).append("\n");
 
         if (rating > 0) {
@@ -124,6 +206,7 @@ public class ContactDetailActivity extends AppCompatActivity {
                     "N:" + name + ";;;\n" +
                     "FN:" + name + "\n" +
                     "TEL;TYPE=CELL:" + phone + "\n" +
+                    "ADR;TYPE=HOME:;;" + city + ";;;;\n" +
                     "NOTE:FixitBhai Service - " + category + "\n" +
                     "END:VCARD";
 

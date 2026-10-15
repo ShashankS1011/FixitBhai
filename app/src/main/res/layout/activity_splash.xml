@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#121212">
 
-    <!-- Center Content -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -13,13 +12,15 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/logoContainer"
             android:layout_width="120dp"
             android:layout_height="120dp"
             app:cardBackgroundColor="#1E1E1E"
             app:cardCornerRadius="24dp"
-            app:cardElevation="8dp">
+            app:cardElevation="8dp"
+            app:strokeColor="#2C2C2C"
+            app:strokeWidth="1dp">
 
             <ImageView
                 android:id="@+id/imgLogo"
@@ -28,7 +29,7 @@
                 android:layout_gravity="center"
                 android:contentDescription="FixitBhai Logo"
                 android:src="@drawable/ic_fixitbhai_logo" />
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tvSplashTitle"
@@ -45,21 +46,19 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="Local service contacts, sorted."
-            android:textColor="#B0BEC5"
+            android:textColor="#A0A0A0"
             android:textSize="15sp" />
 
-        <!-- Funny Fortnite Disclaimer -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="*No, it's not the Fortnite logo. We promise."
-            android:textColor="#78909C"
+            android:textColor="#696969"
             android:textSize="11sp"
             android:textStyle="italic" />
     </LinearLayout>
 
-    <!-- Footer Disclaimer -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -73,7 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Made with Mother's Fear &amp; Pure Panic"
-            android:textColor="#64B5F6"
+            android:textColor="#4589FF"
             android:textSize="12sp"
             android:textStyle="italic" />
 
@@ -82,7 +81,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="(because if the pipe leaks again, I am getting evicted)"
-            android:textColor="#78909C"
+            android:textColor="#696969"
             android:textSize="10sp" />
     </LinearLayout>
 

@@ -7,20 +7,35 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.ContactsContract;
+import android.util.Log;
+import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -30,101 +45,385 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String PREFS_NAME = "FixitBhaiPrefs";
+    public static final String PREFS_NAME = "FixitBhaiPrefs";
     private static final String KEY_CONTACT_LIST = "SavedContacts";
+    private static final String KEY_SELECTED_CITY = "SelectedCity";
+    public static final String KEY_CLOUD_SYNC_PREF = "CloudSyncEnabled";
+    public static final String KEY_PREF_SET = "CloudSyncPrefSet";
     private static final int PERMISSION_REQUEST_READ_CONTACTS = 100;
 
     private ContactAdapter adapter;
     private List<Contact> contactList;
+    private DatabaseHelper dbHelper;
 
-    // UI View References strictly matched to XML
+    private FirebaseFirestore firestore;
+
+    private String selectedCity = "Prayagraj";
+
     private ChipGroup chipGroupCategories;
+    private Chip chipCitySelect;
+    private RecyclerView recyclerViewContacts;
+    private ProgressBar progressBar;
+    private LinearLayout emptyStateLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Bind UI Views according to XML ID attributes
+        dbHelper = new DatabaseHelper(this);
+        firestore = FirebaseFirestore.getInstance();
+
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
-        RecyclerView recyclerViewContacts = findViewById(R.id.recyclerViewContacts);
+        chipCitySelect = findViewById(R.id.chipCitySelect);
+        recyclerViewContacts = findViewById(R.id.recyclerViewContacts);
+        progressBar = findViewById(R.id.progressBar);
+        emptyStateLayout = findViewById(R.id.emptyStateLayout);
+
         ImageButton btnAbout = findViewById(R.id.btnAbout);
+        ImageButton btnLogout = findViewById(R.id.btnLogout);
+        ImageButton btnCloudSync = findViewById(R.id.btnCloudSync);
         FloatingActionButton btnSearch = findViewById(R.id.btnSearch);
 
-        // Configure RecyclerView
         recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
-
-        // Initialize contact dataset
         contactList = new ArrayList<>();
 
-        // 2. Load cached contacts from local storage
-        loadContactsFromStorage();
+        loadSavedState();
 
-        // 3. Setup RecyclerView Adapter
+        if (chipCitySelect != null) {
+            chipCitySelect.setText("City: " + selectedCity + " 📍");
+            chipCitySelect.setOnClickListener(v -> showCitySelectionDialog());
+        }
+
         adapter = new ContactAdapter(contactList);
         recyclerViewContacts.setAdapter(adapter);
 
-        // 4. Check permissions and scan contacts on initial load
-        checkContactPermissionAndScan(false);
+        // --- SWIPE TO DELETE LOGIC ---
+        ItemTouchHelper.SimpleCallback swipeToDeleteCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
 
-        // 5. Setup Click Listeners
-        if (btnAbout != null) {
-            btnAbout.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, AboutActivity.class);
-                startActivity(intent);
-            });
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION) return;
+                Contact deletedContact = contactList.get(position);
+
+                // Remove from UI
+                contactList.remove(position);
+                adapter.notifyItemRemoved(position);
+
+                // Remove from local database
+                dbHelper.deleteContact(deletedContact.getPhone());
+                saveContactsToStorage();
+
+                // Remove from user's personal Firestore Backup dynamically using active UID
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (currentUser != null) {
+                    firestore.collection("users").document(currentUser.getUid())
+                            .collection("contacts").document(deletedContact.getPhone().replaceAll("[^0-9+]", "")).delete();
+                }
+
+                Toast.makeText(MainActivity.this, deletedContact.getName() + " removed", Toast.LENGTH_SHORT).show();
+                checkEmptyState();
+                refreshCategoryChips();
+            }
+        };
+        new ItemTouchHelper(swipeToDeleteCallback).attachToRecyclerView(recyclerViewContacts);
+
+        adapter.filterBy("", selectedCity);
+        checkEmptyState();
+
+        // Trigger the Combined Sync Process on app launch
+        syncWithCloudAndPhonebook(false);
+
+        if (btnAbout != null) btnAbout.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AboutActivity.class)));
+        if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
+        if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
+
+        // Trigger the Combined Sync Process on manual search click
+        if (btnSearch != null) btnSearch.setOnClickListener(v -> syncWithCloudAndPhonebook(true));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (dbHelper != null) {
+            List<Contact> updatedList = dbHelper.getAllContacts();
+            if (!updatedList.isEmpty()) {
+                contactList.clear();
+                contactList.addAll(updatedList);
+                if (adapter != null) {
+                    adapter.updateData(contactList);
+                    adapter.filterBy("", selectedCity);
+                }
+                refreshCategoryChips();
+            }
+        }
+        checkEmptyState();
+    }
+
+    // --- CLOUD CONTACT PICKER LOGIC ---
+    public void showCloudContactPicker() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Please log in to view cloud contacts.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        if (btnSearch != null) {
-            btnSearch.setOnClickListener(v -> checkContactPermissionAndScan(true));
+        String currentUserId = currentUser.getUid();
+        Log.d("FixitBhai_UID", "Querying contacts for UID: " + currentUserId);
+
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+
+        firestore.collection("users")
+                .document(currentUserId)
+                .collection("contacts")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+
+                    List<Contact> cloudContacts = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Contact contact = doc.toObject(Contact.class);
+                        if (contact != null) {
+                            contact.setCloud(true);
+                            cloudContacts.add(contact);
+                        }
+                    }
+
+                    if (cloudContacts.isEmpty()) {
+                        Toast.makeText(this, "No contacts found in your cloud account.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    displaySelectionDialog(cloudContacts);
+                })
+                .addOnFailureListener(e -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, "Failed to fetch cloud contacts: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void displaySelectionDialog(List<Contact> cloudContacts) {
+        String[] contactLabels = new String[cloudContacts.size()];
+        boolean[] checkedItems = new boolean[cloudContacts.size()];
+
+        for (int i = 0; i < cloudContacts.size(); i++) {
+            Contact c = cloudContacts.get(i);
+            contactLabels[i] = c.getName() + " (" + c.getCategory() + ")\n" + c.getPhone();
+            checkedItems[i] = !dbHelper.contactExists(c.getPhone());
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Import Cloud Contacts ☁️")
+                .setMultiChoiceItems(contactLabels, checkedItems, (dialog, which, isChecked) -> checkedItems[which] = isChecked)
+                .setPositiveButton("Import Selected", (dialog, which) -> {
+                    int importedCount = 0;
+                    for (int i = 0; i < cloudContacts.size(); i++) {
+                        if (checkedItems[i]) {
+                            Contact selectedContact = cloudContacts.get(i);
+                            dbHelper.addContact(selectedContact);
+                            importedCount++;
+                        }
+                    }
+
+                    if (importedCount > 0) {
+                        contactList.clear();
+                        contactList.addAll(dbHelper.getAllContacts());
+                        saveContactsToStorage();
+                        adapter.updateData(contactList);
+                        adapter.filterBy("", selectedCity);
+                        refreshCategoryChips();
+                        checkEmptyState();
+                    }
+
+                    Toast.makeText(MainActivity.this, importedCount + " contact(s) saved to device", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // --- COMBINED SYNC ORCHESTRATOR ---
+    private void syncWithCloudAndPhonebook(boolean showToast) {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+        if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.GONE);
+        if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.GONE);
+
+        // Step 1: Fetch Cloud Directory First
+        CloudSyncHelper.fetchCloudContacts(selectedCity, dbHelper, cloudCount -> {
+
+            if (cloudCount > 0) {
+                contactList.clear();
+                contactList.addAll(dbHelper.getAllContacts());
+                saveContactsToStorage();
+                adapter.updateData(contactList);
+                refreshCategoryChips();
+                if (showToast) {
+                    Toast.makeText(MainActivity.this, "Added " + cloudCount + " verified experts from Cloud! ☁️", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            // Step 2: Proceed with existing phonebook scan logic
+            checkContactPermissionAndScan(showToast);
+        });
+    }
+
+    private void checkEmptyState() {
+        if (contactList.isEmpty()) {
+            if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.VISIBLE);
+            if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.GONE);
+        } else {
+            if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.GONE);
+            if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.VISIBLE);
         }
     }
 
-    // --- Permission Handling ---
+    public void logoutUser() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to log out?")
+                .setPositiveButton("Logout", (dialog, which) -> {
+                    FirebaseAuth.getInstance().signOut();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    public void showCitySelectionDialog() {
+        final String[] visitedCities = new String[]{"Prayagraj"};
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_city_select, null);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        ListView listView = dialogView.findViewById(R.id.listViewCities);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_single_choice, visitedCities);
+        listView.setAdapter(arrayAdapter);
+
+        for (int i = 0; i < visitedCities.length; i++) {
+            if (visitedCities[i].equalsIgnoreCase(selectedCity)) {
+                listView.setItemChecked(i, true);
+                break;
+            }
+        }
+
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            selectedCity = visitedCities[position];
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+
+            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity + " 📍");
+            adapter.filterBy("", selectedCity);
+            checkEmptyState();
+
+            Toast.makeText(MainActivity.this, "Switched city to: " + selectedCity, Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+
+            // Re-sync Data for the new city
+            syncWithCloudAndPhonebook(true);
+        });
+
+        ImageButton btnCityHelp = dialogView.findViewById(R.id.btnCityHelp);
+        if (btnCityHelp != null) {
+            btnCityHelp.setOnClickListener(v -> new MaterialAlertDialogBuilder(MainActivity.this)
+                    .setTitle("Where is my city? 😭")
+                    .setMessage("City not listed? Arre bhai, our developer hasn't traveled there yet! 🧳🚆\n\nFixitBhai's contacts aren't scraped from Google—they are 100% hand-picked and verified on the streets. Give our solo creator a minute to save up for the next train ticket!")
+                    .setPositiveButton("Got It", (dialogInterface, i) -> dialogInterface.dismiss())
+                    .show());
+        }
+        dialog.show();
+    }
 
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-                == PackageManager.PERMISSION_GRANTED) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        if (!prefs.getBoolean(KEY_PREF_SET, false)) {
+            showCloudBackupPreferenceDialog(showToastIfNoNew);
+            return;
+        }
+        proceedWithScan(showToastIfNoNew);
+    }
+
+    private void showCloudBackupPreferenceDialog(boolean showToastIfNoNew) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Cloud Backup Option ☁️")
+                .setMessage("Would you like to sync discovered service contacts to your personal cloud for cross-device backup, or keep them locally on your device?")
+                .setPositiveButton("Backup to Cloud", (dialog, which) -> {
+                    saveCloudPreference(true);
+                    proceedWithScan(showToastIfNoNew);
+                })
+                .setNegativeButton("Local Only", (dialog, which) -> {
+                    saveCloudPreference(false);
+                    proceedWithScan(showToastIfNoNew);
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void saveCloudPreference(boolean syncToCloud) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_CLOUD_SYNC_PREF, syncToCloud).putBoolean(KEY_PREF_SET, true).apply();
+    }
+
+    private void proceedWithScan(boolean showToastIfNoNew) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
             importContactsFromPhone(showToastIfNoNew);
         } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_CONTACTS},
-                    PERMISSION_REQUEST_READ_CONTACTS);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, PERMISSION_REQUEST_READ_CONTACTS);
+            refreshCategoryChips();
+            adapter.filterBy("", selectedCity);
+            checkEmptyState();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission granted. Scanning contacts...", Toast.LENGTH_SHORT).show();
                 importContactsFromPhone(true);
             } else {
-                Toast.makeText(this, "Permission denied. Cannot import contacts without permission.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Permission denied. Local contacts skipped.", Toast.LENGTH_SHORT).show();
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 refreshCategoryChips();
+                adapter.filterBy("", selectedCity);
+                checkEmptyState();
             }
         }
     }
 
-    // --- Storage & Dynamic UI Logic ---
-
-    private void loadContactsFromStorage() {
+    private void loadSavedState() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String json = prefs.getString(KEY_CONTACT_LIST, null);
+        selectedCity = prefs.getString(KEY_SELECTED_CITY, "Prayagraj");
 
-        if (json != null) {
-            Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Contact>>() {}.getType();
-            List<Contact> savedList = gson.fromJson(json, type);
-            if (savedList != null) {
-                contactList.clear();
-                contactList.addAll(savedList);
+        List<Contact> dbContacts = dbHelper.getAllContacts();
+        if (!dbContacts.isEmpty()) {
+            contactList.clear();
+            contactList.addAll(dbContacts);
+        } else {
+            String json = prefs.getString(KEY_CONTACT_LIST, null);
+            if (json != null) {
+                Gson gson = new Gson();
+                Type type = new TypeToken<ArrayList<Contact>>() {}.getType();
+                List<Contact> savedList = gson.fromJson(json, type);
+                if (savedList != null) {
+                    contactList.clear();
+                    contactList.addAll(savedList);
+                }
             }
         }
     }
@@ -132,26 +431,22 @@ public class MainActivity extends AppCompatActivity {
     private void saveContactsToStorage() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-
         Gson gson = new Gson();
-        String json = gson.toJson(contactList);
-
-        editor.putString(KEY_CONTACT_LIST, json);
+        editor.putString(KEY_CONTACT_LIST, gson.toJson(contactList));
         editor.apply();
     }
 
     private void refreshCategoryChips() {
-        chipGroupCategories.removeAllViews();
+        if (chipGroupCategories == null) return;
 
-        // Default "All" Category Chip
+        chipGroupCategories.removeAllViews();
         Chip allChip = new Chip(this);
         allChip.setText("All");
         allChip.setCheckable(true);
         allChip.setChecked(true);
-        allChip.setOnClickListener(v -> adapter.getFilter().filter(""));
+        allChip.setOnClickListener(v -> adapter.filterBy("", selectedCity));
         chipGroupCategories.addView(allChip);
 
-        // Get unique categories from current contact dataset
         Set<String> categories = new LinkedHashSet<>();
         for (Contact contact : contactList) {
             if (contact.getCategory() != null && !contact.getCategory().trim().isEmpty()) {
@@ -159,165 +454,176 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Dynamically append chip items to ChipGroup
         for (String categoryName : categories) {
             Chip categoryChip = new Chip(this);
             categoryChip.setText(categoryName);
             categoryChip.setCheckable(true);
-            categoryChip.setOnClickListener(v -> adapter.getFilter().filter(categoryName));
+            categoryChip.setOnClickListener(v -> adapter.filterBy(categoryName, selectedCity));
             chipGroupCategories.addView(categoryChip);
         }
     }
 
     private void importContactsFromPhone(boolean showToast) {
-        String[] serviceKeywords = {
-                // High Priority Trades
-                "ac repair", "ac service", "ac", "aircon", "air conditioner",
-                "ro repair", "ro service", "ro", "water purifier",
-                "tv repair", "tv", "television", "led tv",
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+        if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.GONE);
+        if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.GONE);
 
-                // Basic Trades
-                "plumber", "electrician", "carpenter", "painter", "mistri", "mistry",
-                "mason", "welder", "glazier", "fabricator", "roofer", "tiler", "pop",
-                "plaster", "contractor", "hardware", "builder",
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
 
-                // Home Appliances
-                "washing machine", "washer", "dryer", "fridge", "refrigerator",
-                "appliance", "microwave", "oven", "chimney", "geyser", "water heater",
-                "inverter", "battery", "generator", "cooler", "air cooler", "fan", "dishwasher",
+        executor.execute(() -> {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            boolean shouldSyncCloud = prefs.getBoolean(KEY_CLOUD_SYNC_PREF, false);
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String currentUserId = currentUser != null ? currentUser.getUid() : null;
 
-                // Automotive Services
-                "mechanic", "garage", "puncture", "puncture wala", "tyre", "tire",
-                "auto", "cab", "driver", "taxi", "crane", "towing", "denter",
-                "painter auto", "wheel alignment", "car service", "bike service",
+            String[] serviceKeywords = {
+                    "ac repair", "ac service", "ac", "aircon", "air conditioner", "hvac", "chiller",
+                    "fridge", "refrigerator", "deep freezer", "cooler", "air cooler", "fan",
+                    "ro repair", "ro service", "ro", "water purifier", "aquaguard", "kent ro",
+                    "plumber", "plumbing", "borewell", "submersible", "pump", "sump", "water tank",
+                    "geyser", "water heater", "solar water heater", "washing machine", "washer", "dryer", "dishwasher", "microwave", "oven",
+                    "chimney", "hob", "gas stove", "gas repair", "gas cylinder", "indane", "hp gas", "bharat gas",
+                    "mixer", "grinder", "juicer", "induction", "appliance",
+                    "electrician", "electrical", "wireman", "inverter", "battery", "ups", "generator",
+                    "tv repair", "tv", "television", "led tv", "lcd tv", "dth", "dish tv", "tata play",
+                    "set top box", "cable tv", "cable wala", "wifi", "broadband", "internet", "cctv", "camera",
+                    "carpenter", "carpentry", "painter", "painting", "mistri", "mistry", "karigar",
+                    "mason", "welder", "welding", "glazier", "glass work", "fabricator", "fabrication",
+                    "roofer", "roofing", "tiler", "tiles", "marble", "granite", "polish", "pop",
+                    "plaster", "contractor", "hardware", "builder", "waterproofing", "interior",
+                    "mechanic", "garage", "puncture", "puncture wala", "tyre", "tire", "alignment",
+                    "auto", "cab", "driver", "taxi", "crane", "towing", "denter", "dent repair",
+                    "painter auto", "wheel alignment", "car service", "bike service", "car wash", "valet",
+                    "excavator", "jcb", "loader", "tractor", "cleaner", "cleaning", "housekeeper", "pest control", "disinfection", "sanitize",
+                    "septic", "septic tank", "tank cleaner", "sofa cleaning", "carpet cleaning",
+                    "maid", "cook", "chef", "gardener", "mali", "laundry", "dhobi", "press wala", "ironing",
+                    "milkman", "doodhwala", "paperwala", "newspaper", "waste", "kabra", "scrap", "kadiwala",
+                    "security", "guard", "watchman", "technician", "installation", "maintenance",
+                    "fitting", "repair", "service", "fix", "helper", "vendor", "supplier", "center", "agency"
+            };
 
-                // Sanitation & Maintenance
-                "cleaner", "housekeeper", "pest control", "disinfection", "septic",
-                "tank cleaner", "sofa cleaning", "carpet cleaning", "maid", "cook",
+            String[] relativeBlacklist = {
+                    "chacha", "chachaji", "chachi", "mama", "mamaji", "mami", "bua", "buaji", "fufa", "fufaji", "phoopha",
+                    "tau", "tauji", "tai", "taiji", "masi", "masiji", "maasi", "mausa", "mausaji",
+                    "bhaiya", "bhai", "bhaya", "didi", "didiji", "di", "dadi", "dadiji", "dada", "dadaji",
+                    "nani", "naniji", "nana", "nanaji", "kaka", "kakaji", "kaki", "bhabhi", "bhabhiji",
+                    "jija", "jijaji", "saas", "sasur", "sasurji", "devar", "devrani", "nanad", "jeth", "jethani",
+                    "sala", "salaji", "sali", "saali", "beta", "beti", "pota", "poti", "natina", "nati",
+                    "bhanja", "bhanji", "bhatija", "bhatiji", "samdhi", "samdhan", "uncle", "aunt", "aunty", "cousin", "bro", "brother", "sis", "sister",
+                    "mom", "mummy", "mummyji", "dad", "papa", "papaji", "pop", "son", "daughter",
+                    "grandma", "grandpa", "mother", "father", "husband", "wife", "hubby", "wifey",
+                    "niece", "nephew", "stepdad", "stepmom", "amma", "appa", "baba", "anna", "chechi", "chettan", "akka", "thambi", "macha", "machan"
+            };
 
-                // Machinery & Borewell
-                "gardener", "mali", "borewell", "pump", "excavator",
-
-                // Generic Fallbacks
-                "technician", "installation", "maintenance", "fitting", "repair", "service", "fix", "helper", "vendor", "supplier"
-        };
-
-        String[] relativeBlacklist = {
-                "chacha", "chachi", "mama", "mami", "bua", "fufa", "tau", "tai",
-                "masi", "mausa", "bhaiya", "bhai", "didi", "di", "dadi", "dada",
-                "nani", "nana", "kaka", "kaki", "bhabhi", "jija", "jijaji", "saas",
-                "sasur", "devar", "nanad", "sala", "sali", "beta", "beti", "pota",
-                "poti", "natina", "nati", "bhanja", "bhanji", "bhatija", "bhatiji",
-                "uncle", "aunt", "aunty", "cousin", "bro", "brother", "sis",
-                "sister", "mom", "mummy", "dad", "papa", "pop", "son", "daughter",
-                "grandma", "grandpa", "mother", "father", "husband", "wife", "niece", "nephew"
-        };
-
-        Set<String> existingNumbers = new HashSet<>();
-        Set<String> existingNames = new HashSet<>();
-
-        for (Contact contact : contactList) {
-            if (contact.getPhone() != null) {
-                existingNumbers.add(normalizePhoneNumber(contact.getPhone()));
+            Set<String> existingNumbers = new HashSet<>();
+            Set<String> existingNames = new HashSet<>();
+            for (Contact contact : contactList) {
+                if (contact.getPhone() != null) existingNumbers.add(normalizePhoneNumber(contact.getPhone()));
+                if (contact.getName() != null) existingNames.add(contact.getName().toLowerCase().trim());
             }
-            if (contact.getName() != null) {
-                existingNames.add(contact.getName().toLowerCase().trim());
-            }
-        }
 
-        ContentResolver contentResolver = getContentResolver();
+            ContentResolver contentResolver = getContentResolver();
+            Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            refreshCategoryChips();
-            return;
-        }
+            int importedCount = 0;
 
-        Cursor cursor = contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                null, null, null, null
-        );
+            if (cursor != null) {
+                int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
 
-        int importedCount = 0;
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(nameIndex);
+                    String number = cursor.getString(numberIndex);
 
-        if (cursor != null) {
-            int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-            int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                    if (name == null || number == null) continue;
+                    String lowerName = name.toLowerCase().trim();
+                    String formattedNumber = normalizePhoneNumber(number);
 
-            while (cursor.moveToNext()) {
-                String name = cursor.getString(nameIndex);
-                String number = cursor.getString(numberIndex);
+                    if (existingNumbers.contains(formattedNumber) || existingNames.contains(lowerName)) continue;
 
-                if (name == null || number == null) continue;
-
-                String lowerName = name.toLowerCase().trim();
-                String cleanNumber = normalizePhoneNumber(number);
-
-                if (existingNumbers.contains(cleanNumber) || existingNames.contains(lowerName)) {
-                    continue;
-                }
-
-                boolean isRelative = false;
-                for (String relative : relativeBlacklist) {
-                    if (lowerName.contains(relative)) {
-                        isRelative = true;
-                        break;
-                    }
-                }
-                if (isRelative) continue;
-
-                String matchedCategory = null;
-                for (String keyword : serviceKeywords) {
-                    String regex = "(?i).*\\b" + Pattern.quote(keyword) + "\\b.*";
-                    if (lowerName.matches(regex)) {
-                        if (keyword.equalsIgnoreCase("ac") || keyword.equalsIgnoreCase("ac repair") || keyword.equalsIgnoreCase("ac service")) {
-                            matchedCategory = "AC Repair";
-                        } else if (keyword.equalsIgnoreCase("ro") || keyword.equalsIgnoreCase("ro repair") || keyword.equalsIgnoreCase("ro service")) {
-                            matchedCategory = "RO Repair";
-                        } else if (keyword.equalsIgnoreCase("tv") || keyword.equalsIgnoreCase("tv repair")) {
-                            matchedCategory = "TV Repair";
-                        } else {
-                            matchedCategory = capitalizeWords(keyword);
+                    boolean isRelative = false;
+                    for (String relative : relativeBlacklist) {
+                        if (lowerName.contains(relative)) {
+                            isRelative = true;
+                            break;
                         }
-                        break;
+                    }
+                    if (isRelative) continue;
+
+                    String matchedCategory = null;
+                    for (String keyword : serviceKeywords) {
+                        String regex = "(?i).*\\b" + Pattern.quote(keyword) + "\\b.*";
+                        if (lowerName.matches(regex)) {
+                            if (keyword.equalsIgnoreCase("ac") || keyword.equalsIgnoreCase("ac repair") || keyword.equalsIgnoreCase("ac service")) {
+                                matchedCategory = "AC Repair";
+                            } else if (keyword.equalsIgnoreCase("ro") || keyword.equalsIgnoreCase("ro repair") || keyword.equalsIgnoreCase("ro service")) {
+                                matchedCategory = "RO Repair";
+                            } else if (keyword.equalsIgnoreCase("tv") || keyword.equalsIgnoreCase("tv repair")) {
+                                matchedCategory = "TV Repair";
+                            } else {
+                                matchedCategory = capitalizeWords(keyword);
+                            }
+                            break;
+                        }
+                    }
+
+                    if (matchedCategory != null) {
+                        Contact newContact = new Contact(name, formattedNumber, matchedCategory, selectedCity, false);
+                        existingNumbers.add(formattedNumber);
+                        existingNames.add(lowerName);
+                        importedCount++;
+
+                        dbHelper.addContact(newContact);
+                        if (shouldSyncCloud && currentUserId != null) {
+                            firestore.collection("users").document(currentUserId)
+                                    .collection("contacts").document(formattedNumber.replaceAll("[^0-9+]", "")).set(newContact.toMap());
+                        }
                     }
                 }
+                cursor.close();
+            }
 
-                if (matchedCategory != null) {
-                    Contact newContact = new Contact(name, number, matchedCategory);
-                    contactList.add(0, newContact);
+            final int finalImportedCount = importedCount;
 
-                    existingNumbers.add(cleanNumber);
-                    existingNames.add(lowerName);
+            handler.post(() -> {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
 
-                    importedCount++;
+                if (finalImportedCount > 0) {
+                    contactList.clear();
+                    contactList.addAll(dbHelper.getAllContacts());
+                    saveContactsToStorage();
+
+                    adapter.updateData(contactList);
+                    adapter.filterBy("", selectedCity);
+                    refreshCategoryChips();
+
+                    if (showToast) {
+                        String modeMsg = shouldSyncCloud ? " (Local + Backup)" : " (Local Only)";
+                        Toast.makeText(MainActivity.this, "Imported " + finalImportedCount + " new contacts" + modeMsg + ".", Toast.LENGTH_SHORT).show();
+                    }
+                } else if (showToast) {
+                    Toast.makeText(MainActivity.this, "Scan Complete! No new local service contacts found.", Toast.LENGTH_SHORT).show();
                 }
-            }
-            cursor.close();
-        }
 
-        adapter.updateData(contactList);
-        refreshCategoryChips();
+                adapter.filterBy("", selectedCity);
+                checkEmptyState();
+            });
 
-        if (importedCount > 0) {
-            saveContactsToStorage();
-            if (showToast) {
-                Toast.makeText(this, "Imported " + importedCount + " new service contacts.", Toast.LENGTH_SHORT).show();
-            }
-        } else if (showToast) {
-            Toast.makeText(this, "No new service contacts found.", Toast.LENGTH_SHORT).show();
-        }
+            executor.shutdown();
+        });
     }
 
-    // --- Helper Methods ---
-
     private String normalizePhoneNumber(String rawNumber) {
-        if (rawNumber == null) return "";
+        if (rawNumber == null || rawNumber.trim().isEmpty()) return "";
         String digitsOnly = rawNumber.replaceAll("[^0-9]", "");
-        if (digitsOnly.length() > 10) {
-            return digitsOnly.substring(digitsOnly.length() - 10);
+        if (digitsOnly.length() > 10 && digitsOnly.startsWith("91")) {
+            digitsOnly = digitsOnly.substring(digitsOnly.length() - 10);
         }
-        return digitsOnly;
+        if (digitsOnly.length() == 10) {
+            return "+91 " + digitsOnly.substring(0, 5) + " " + digitsOnly.substring(5);
+        }
+        return rawNumber;
     }
 
     private String capitalizeWords(String str) {
@@ -325,7 +631,7 @@ public class MainActivity extends AppCompatActivity {
         String[] words = str.split(" ");
         StringBuilder sb = new StringBuilder();
         for (String w : words) {
-            if (w.length() > 0) {
+            if (!w.isEmpty()) {
                 sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(" ");
             }
         }

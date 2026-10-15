@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -32,13 +33,28 @@ android {
 }
 
 dependencies {
+    // Import the Firebase BoM to automatically manage versions
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+
+    // Firebase dependencies
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
+    // Other UI and Google Auth dependencies
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation(libs.material)
+
+    // Testing dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
+
+    // QR Code and JSON libraries
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.4")
     implementation("com.google.code.gson:gson:2.14.0")

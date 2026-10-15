@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -19,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="20dp"
-            android:paddingVertical="16dp">
+            android:paddingVertical="14dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -37,30 +36,71 @@
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvAppSubTitle"
+                <!-- City Selector Chip -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCitySelect"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Local service contacts"
-                    android:textColor="#A0A0A0"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="4dp"
+                    android:text="City: Prayagraj 📍"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="#262626"
+                    app:chipIconTint="#4589FF"
+                    app:chipMinHeight="32dp"
+                    app:strokeColor="#4589FF"
+                    app:strokeWidth="1dp" />
+
             </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnAbout"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <!-- Action Buttons Container (Right Side) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="About Info"
-                android:padding="8dp"
-                android:src="@android:drawable/ic_dialog_info"
-                app:tint="#A0A0A0" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Cloud Picker Button -->
+                <ImageButton
+                    android:id="@+id/btnCloudSync"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Cloud Picker"
+                    android:padding="8dp"
+                    android:src="@android:drawable/stat_sys_download_done"
+                    app:tint="#4589FF" />
+
+                <!-- Logout Button -->
+                <ImageButton
+                    android:id="@+id/btnLogout"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Logout"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_lock_power_off"
+                    app:tint="#A0A0A0" />
+
+                <!-- About Button -->
+                <ImageButton
+                    android:id="@+id/btnAbout"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="About Info"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    app:tint="#A0A0A0" />
+
+            </LinearLayout>
+
         </RelativeLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Main Scrollable Body Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -72,7 +112,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Category Filter Chips -->
+            <!-- Dynamic Chips Container -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -86,28 +126,64 @@
                     app:singleSelection="true" />
             </HorizontalScrollView>
 
-            <!-- Contacts RecyclerView -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewContacts"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:nestedScrollingEnabled="false" />
+                android:layout_marginTop="8dp">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewContacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="32dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/emptyStateLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="48dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No Contacts Found 🔍"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Tap the cloud icon above or scan for contacts."
+                        android:textColor="#A0A0A0"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </FrameLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Redesigned Search Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnSearch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
-        android:contentDescription="Search contacts"
+        android:contentDescription="Search &amp; Sync"
         android:src="@android:drawable/ic_menu_search"
-        app:backgroundTint="#2196F3"
-        app:elevation="6dp"
-        app:fabSize="normal"
+        app:backgroundTint="#4589FF"
         app:tint="#FFFFFF" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
