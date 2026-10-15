@@ -7,6 +7,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ContactTest {
 
@@ -32,6 +33,20 @@ public class ContactTest {
     }
 
     @Test
+    public void testFormatWithCountryCode_WithLeadingZeros() {
+        String input = "09876543210";
+        String expected = "+919876543210";
+        assertEquals(expected, Contact.formatWithCountryCode(input));
+    }
+
+    @Test
+    public void testFormatWithCountryCode_12DigitWith91() {
+        String input = "919876543210";
+        String expected = "+919876543210";
+        assertEquals(expected, Contact.formatWithCountryCode(input));
+    }
+
+    @Test
     public void testFormatWithCountryCode_NullOrEmpty() {
         assertEquals("", Contact.formatWithCountryCode(null));
         assertEquals("", Contact.formatWithCountryCode("   "));
@@ -45,6 +60,30 @@ public class ContactTest {
         assertEquals(0.0f, contact.getRating(), 0.001f);
         assertFalse(contact.isDoNotCall());
         assertFalse(contact.isCloud());
+    }
+
+    @Test
+    public void testContactMutators() {
+        Contact contact = new Contact();
+        contact.setId("1");
+        contact.setName("Suresh Electrician");
+        contact.setPhone("9988776655");
+        contact.setCategory("Electrician");
+        contact.setCity("Lucknow");
+        contact.setRating(5.0f);
+        contact.setNotes("Expert wiring");
+        contact.setDoNotCall(true);
+        contact.setCloud(true);
+
+        assertEquals("1", contact.getId());
+        assertEquals("Suresh Electrician", contact.getName());
+        assertEquals("+919988776655", contact.getPhone());
+        assertEquals("Electrician", contact.getCategory());
+        assertEquals("Lucknow", contact.getCity());
+        assertEquals(5.0f, contact.getRating(), 0.001f);
+        assertEquals("Expert wiring", contact.getNotes());
+        assertTrue(contact.isDoNotCall());
+        assertTrue(contact.isCloud());
     }
 
     @Test
