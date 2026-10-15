@@ -1,4 +1,4 @@
-# FixitBhai 🛠️
+# FixitBhai
 
 [![Android CI](https://github.com/ShashankS1011/FixitBhai/actions/workflows/android.yml/badge.svg)](https://github.com/ShashankS1011/FixitBhai/actions/workflows/android.yml)
 [![CodeQL Analysis](https://github.com/ShashankS1011/FixitBhai/actions/workflows/codeql.yml/badge.svg)](https://github.com/ShashankS1011/FixitBhai/actions/workflows/codeql.yml)
@@ -11,19 +11,19 @@ Never lose the contact number of a verified local technician again or confuse th
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-- **📱 Smart Phonebook Scanner:** Automatically discovers repair and maintenance contacts from your phonebook using intelligent keyword matching while filtering out personal family contacts.
-- **☁️ Cloud Backup & Sync:** Seamlessly backs up service contacts to your personal Firebase Cloud Firestore directory for cross-device access.
-- **🎨 Modern Slate Dark UI:** Sleek, high-contrast dark design system built with Material 3 components, avatar initial circles, and custom status pills.
-- **🏷️ Dynamic Category Filtering:** Instant filtering by service trade (AC Repair, RO Service, Electrician, Plumber, Mechanic) and city via horizontal filter chips.
-- **🚫 Blacklist / Do Not Call Warning:** Mark bad service providers or unreliable technicians with a visible warning banner to prevent accidental re-hiring.
-- **📍 City Selection:** Filter local experts by specific target city directories.
-- **📲 Quick Actions:** One-tap calling, contact sharing, and instant vCard QR code generation for camera scanning.
+- **Smart Phonebook Scanner:** Automatically discovers repair and maintenance contacts from your phonebook using intelligent keyword matching while filtering out personal family contacts.
+- **Cloud Backup & Sync:** Seamlessly backs up service contacts to your personal Firebase Cloud Firestore directory for cross-device access.
+- **Modern Slate Dark UI:** Sleek, high-contrast dark design system built with Material 3 components, avatar initial circles, and custom status pills.
+- **Dynamic Category Filtering:** Instant filtering by service trade (AC Repair, RO Service, Electrician, Plumber, Mechanic) and city via horizontal filter chips.
+- **Blacklist / Do Not Call Warning:** Mark bad service providers or unreliable technicians with a visible warning banner to prevent accidental re-hiring.
+- **City Selection:** Filter local experts by specific target city directories.
+- **Quick Actions:** One-tap calling, contact sharing, and instant vCard QR code generation for camera scanning.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 - **Language:** Java & Kotlin
 - **Min SDK:** 24 (Android 7.0)
@@ -35,11 +35,11 @@ Never lose the contact number of a verified local technician again or confuse th
 
 ---
 
-## 📦 Downloads & Releases
+## Downloads & Releases
 
 You can download the latest compiled APK directly from GitHub Releases:
 
-- 🚀 **[Download Latest FixitBhai APK](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
+- **[Download Latest FixitBhai APK](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
 
 Alternatively, build the application directly from source:
 ```bash
@@ -49,7 +49,7 @@ The generated APK will be located at `app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
-## 🔒 Security & Vulnerability Reporting
+## Security & Vulnerability Reporting
 
 Security and user privacy are fundamental to FixitBhai:
 - **No Unused Data Access:** Contact scanning is strictly performed locally on-device.
@@ -57,7 +57,7 @@ Security and user privacy are fundamental to FixitBhai:
 
 ---
 
-## 🏗️ Building From Source
+## Building From Source
 
 ### Prerequisites
 - Android Studio Ladybug (2024.2.1) or newer
@@ -77,6 +77,6 @@ Security and user privacy are fundamental to FixitBhai:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.

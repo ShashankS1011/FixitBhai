@@ -42,7 +42,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="City: Prayagraj 📍"
+                    android:text="City: Prayagraj"
                     android:textColor="@color/text_primary"
                     android:textSize="12sp"
                     app:chipBackgroundColor="@color/bg_dark"
@@ -158,7 +158,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="No Contacts Found 🔍"
+                        android:text="No Contacts Found"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />

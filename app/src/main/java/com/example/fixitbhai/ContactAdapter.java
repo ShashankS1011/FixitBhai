@@ -69,11 +69,11 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
         // --- NEW: Cloud vs Local UI Styling ---
         if (contact.isCloud()) {
-            holder.tvSourceBadge.setText("☁️ Cloud");
+            holder.tvSourceBadge.setText("Cloud");
             holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#0F62FE")); // Modern Blue background
             holder.cardContact.setStrokeColor(Color.parseColor("#3B82F6")); // Blue Card border
         } else {
-            holder.tvSourceBadge.setText("📱 Local");
+            holder.tvSourceBadge.setText("Local");
             holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#10B981")); // Emerald Green background
             holder.cardContact.setStrokeColor(Color.parseColor("#334155")); // Dark slate border
         }
@@ -95,7 +95,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         // Long Press -> Upload to Cloud
         holder.itemView.setOnLongClickListener(v -> {
             new MaterialAlertDialogBuilder(context)
-                    .setTitle("Backup to Cloud ☁️")
+                    .setTitle("Backup to Cloud")
                     .setMessage("Do you want to manually upload " + contact.getName() + " to your cloud backup?")
                     .setPositiveButton("Upload", (dialog, which) -> {
                         String uid = FirebaseAuth.getInstance().getUid();

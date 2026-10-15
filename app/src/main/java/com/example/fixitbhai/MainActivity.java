@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         loadSavedState();
 
         if (chipCitySelect != null) {
-            chipCitySelect.setText("City: " + selectedCity + " 📍");
+            chipCitySelect.setText("City: " + selectedCity);
             chipCitySelect.setOnClickListener(v -> showCitySelectionDialog());
         }
 
@@ -224,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Import Cloud Contacts ☁️")
+                .setTitle("Import Cloud Contacts")
                 .setMultiChoiceItems(contactLabels, checkedItems, (dialog, which, isChecked) -> checkedItems[which] = isChecked)
                 .setPositiveButton("Import Selected", (dialog, which) -> {
                     int importedCount = 0;
@@ -268,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
                 adapter.updateData(contactList);
                 refreshCategoryChips();
                 if (showToast) {
-                    Toast.makeText(MainActivity.this, "Added " + cloudCount + " verified experts from Cloud! ☁️", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Added " + cloudCount + " verified experts from Cloud!", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
             prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
 
-            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity + " 📍");
+            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
             adapter.filterBy("", selectedCity);
             checkEmptyState();
 
@@ -340,8 +340,8 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnCityHelp = dialogView.findViewById(R.id.btnCityHelp);
         if (btnCityHelp != null) {
             btnCityHelp.setOnClickListener(v -> new MaterialAlertDialogBuilder(MainActivity.this)
-                    .setTitle("Where is my city? 😭")
-                    .setMessage("City not listed? Arre bhai, our developer hasn't traveled there yet! 🧳🚆\n\nFixitBhai's contacts aren't scraped from Google—they are 100% hand-picked and verified on the streets. Give our solo creator a minute to save up for the next train ticket!")
+                    .setTitle("Where is my city?")
+                    .setMessage("City not listed? Our developer hasn't traveled there yet!\n\nFixitBhai's contacts aren't scraped from Google—they are 100% hand-picked and verified on the streets. Give our creator a minute to save up for the next visit!")
                     .setPositiveButton("Got It", (dialogInterface, i) -> dialogInterface.dismiss())
                     .show());
         }
@@ -359,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showCloudBackupPreferenceDialog(boolean showToastIfNoNew) {
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Cloud Backup Option ☁️")
+                .setTitle("Cloud Backup Option")
                 .setMessage("Would you like to sync discovered service contacts to your personal cloud for cross-device backup, or keep them locally on your device?")
                 .setPositiveButton("Backup to Cloud", (dialog, which) -> {
                     saveCloudPreference(true);

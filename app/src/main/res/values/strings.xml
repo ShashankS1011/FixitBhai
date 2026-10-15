@@ -8,7 +8,7 @@
     <string name="btn_send_otp">Send Verification Code</string>
     <string name="btn_verify_otp">Verify &amp; Sign In</string>
     <string name="btn_resend_otp">Didn\'t receive code? Resend SMS</string>
-    <string name="no_contacts_title">No Contacts Found 🔍</string>
+    <string name="no_contacts_title">No Contacts Found</string>
     <string name="no_contacts_subtitle">Tap the cloud icon above or search to scan contacts.</string>
     <string name="about_title">About FixitBhai</string>
     <string name="version_text">Version 1.0</string>
@@ -21,6 +21,6 @@
     <string name="quick_notes_title">Quick Notes and Rates</string>
     <string name="quick_notes_hint">Rates, availability, or general notes&#8230;</string>
     <string name="select_city">Select City</string>
-    <string name="badge_cloud">☁️ Cloud</string>
-    <string name="badge_local">📱 Local</string>
+    <string name="badge_cloud">Cloud</string>
+    <string name="badge_local">Local</string>
 </resources>
