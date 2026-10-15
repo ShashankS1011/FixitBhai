@@ -54,15 +54,28 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         // FORMAT THE NUMBER FOR DISPLAY HERE
         holder.tvPhone.setText(formatForDisplay(contact.getPhone()));
 
+        if (holder.tvCategoryCity != null) {
+            String category = contact.getCategory() != null ? contact.getCategory() : "General";
+            String city = contact.getCity() != null ? contact.getCity() : "";
+            String categoryCityText = city.isEmpty() ? category : category + " • " + city;
+            holder.tvCategoryCity.setText(categoryCityText);
+        }
+
+        if (holder.tvAvatar != null) {
+            String name = contact.getName();
+            String initial = (name != null && !name.trim().isEmpty()) ? name.trim().substring(0, 1).toUpperCase() : "F";
+            holder.tvAvatar.setText(initial);
+        }
+
         // --- NEW: Cloud vs Local UI Styling ---
         if (contact.isCloud()) {
             holder.tvSourceBadge.setText("☁️ Cloud");
-            holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#4589FF")); // Blue background
-            holder.cardContact.setStrokeColor(Color.parseColor("#4589FF")); // Blue Card border
+            holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#0F62FE")); // Modern Blue background
+            holder.cardContact.setStrokeColor(Color.parseColor("#3B82F6")); // Blue Card border
         } else {
             holder.tvSourceBadge.setText("📱 Local");
-            holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#2E7D32")); // Green background
-            holder.cardContact.setStrokeColor(Color.parseColor("#333333")); // Dark grey border
+            holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#10B981")); // Emerald Green background
+            holder.cardContact.setStrokeColor(Color.parseColor("#334155")); // Dark slate border
         }
         // ----------------------------------------
 
@@ -209,7 +222,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     }
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvPhone, tvSourceBadge;
+        TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity;
         ImageButton btnCall, btnShare;
         MaterialCardView cardContact;
 
@@ -219,6 +232,9 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             tvPhone = itemView.findViewById(R.id.tvPhone);
             btnCall = itemView.findViewById(R.id.btnCall);
             btnShare = itemView.findViewById(R.id.btnShare);
+
+            tvAvatar = itemView.findViewById(R.id.tvAvatar);
+            tvCategoryCity = itemView.findViewById(R.id.tvCategoryCity);
 
             // Initialize the new views here
             tvSourceBadge = itemView.findViewById(R.id.tvSourceBadge);

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
+    android:background="@color/bg_dark"
     android:padding="16dp">
 
     <LinearLayout
@@ -15,10 +15,10 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="#1E1E1E"
+            app:cardBackgroundColor="@color/surface_dark"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:strokeColor="#2C2C2C"
+            app:strokeColor="#334155"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -32,7 +32,7 @@
                     android:id="@+id/tvContactName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
@@ -41,7 +41,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="#4589FF"
+                    android:textColor="@color/accent_blue"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -50,7 +50,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:textColor="#A0A0A0"
+                    android:textColor="@color/text_secondary"
                     android:textSize="15sp" />
 
                 <TextView
@@ -58,26 +58,26 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="#33DA1E28"
+                    android:background="#33EF4444"
                     android:paddingHorizontal="12dp"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="6dp"
                     android:text="DO NOT REHIRE / BAD SERVICE"
-                    android:textColor="#FF8389"
+                    android:textColor="@color/accent_red"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Service Status & Rating Card -->
+        <!-- Rating & Service Status Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="#1E1E1E"
+            app:cardBackgroundColor="@color/surface_dark"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:strokeColor="#2C2C2C"
+            app:strokeColor="#334155"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -90,7 +90,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rating &amp; Service Status"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
@@ -110,9 +110,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:buttonTint="#FF8389"
+                    android:buttonTint="@color/accent_red"
                     android:text="Mark as Do Not Call Again (Blacklist)"
-                    android:textColor="#FF8389"
+                    android:textColor="@color/accent_red"
                     android:textSize="13sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -122,10 +122,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="#1E1E1E"
+            app:cardBackgroundColor="@color/surface_dark"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:strokeColor="#2C2C2C"
+            app:strokeColor="#334155"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -138,7 +138,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Quick Notes and Rates"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
@@ -147,13 +147,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:background="#262626"
+                    android:background="@color/bg_dark"
                     android:hint="Rates, availability, or general notes..."
                     android:inputType="textMultiLine"
                     android:minLines="3"
                     android:padding="12dp"
-                    android:textColor="#FFFFFF"
-                    android:textColorHint="#696969"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted"
                     android:textSize="14sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -168,56 +168,45 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnShareText"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/SleekOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:text="Share Contact"
-                android:textColor="#4589FF"
-                app:cornerRadius="12dp"
-                app:strokeColor="#4589FF" />
+                android:text="Share Contact" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnShareQR"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/SleekOutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 android:text="Show QR Code"
-                android:textColor="#10B981"
-                app:cornerRadius="12dp"
-                app:strokeColor="#10B981" />
+                android:textColor="@color/accent_green"
+                app:strokeColor="@color/accent_green" />
         </LinearLayout>
 
         <!-- Save Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
+            style="@style/SleekPrimaryButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="#4589FF"
-            android:paddingVertical="12dp"
-            android:text="Save Changes"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            app:cornerRadius="12dp" />
+            android:layout_marginTop="12dp"
+            android:text="Save Changes" />
 
-        <!-- Delete Button (ADDED TO MATCH JAVA CODE) -->
+        <!-- Delete Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDelete"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/SleekOutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
-            android:paddingVertical="12dp"
             android:text="Delete Contact"
-            android:textColor="#FF8389"
-            android:textSize="16sp"
-            app:cornerRadius="12dp"
-            app:strokeColor="#FF8389" />
+            android:textColor="@color/accent_red"
+            app:strokeColor="@color/accent_red" />
 
     </LinearLayout>
 </ScrollView>
