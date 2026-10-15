@@ -1,85 +1,82 @@
-# Fixit Bhai
+# FixitBhai 🛠️
 
-Fixit Bhai is an Android application engineered to automatically scan, identify, and categorize local service technicians and home repair contacts directly from an Android device's contact list. 
+[![Android CI](https://github.com/ShashankS1011/FixitBhai/actions/workflows/android.yml/badge.svg)](https://github.com/ShashankS1011/FixitBhai/actions/workflows/android.yml)
+[![CodeQL Analysis](https://github.com/ShashankS1011/FixitBhai/actions/workflows/codeql.yml/badge.svg)](https://github.com/ShashankS1011/FixitBhai/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Android SDK](https://img.shields.io/badge/Min%20SDK-24-brightgreen.svg)](https://developer.android.com)
 
-By utilizing dynamic string matching and predefined exclusion rules, the application aggregates essential service providers—such as AC technicians, plumbers, electricians, and mechanics—without manual contact searches.
+**FixitBhai** is a modern Android application designed to automatically scan, organize, and manage local home service technicians (plumbers, electricians, AC repair experts, mechanics, carpenters, etc.) directly from your phonebook and cloud directory.
 
----
-
-## Downloads
-
-* **Direct APK Download:** [Download Latest Release](https://github.com/ShashankS1011/FixitBhai/releases/download/v1.1/FixItBhai.apk)
-
----
-
-## Technical Architecture and Implementation
-
-### 1. Contact Processing & Categorization
-* **Targeted Scanning:** Queries the system `ContactsContract.CommonDataKinds.Phone` ContentProvider to retrieve name and phone number records.
-* **Regex Word-Boundary Matching:** Employs word-boundary regular expressions (`\bkeyword\b`) to match specific service keywords against contact display names.
-* **Keyword Prioritization Logic:** Prioritizes explicit trades over broad service descriptors (e.g., matching "Sujeet AC Service" to **AC Repair** instead of a generic **Service** category).
-* **Exclusion Filtering:** Implements a family blacklist containing regional and English familial terms (e.g., *Bhaiya*, *Uncle*, *Cousin*) to prevent personal contacts from entering the service directory.
-
-### 2. UI & Component Architecture
-* **Dynamic Chip Generation:** Programmatically inflates Material `Chip` components inside a `ChipGroup` based on the unique categories present in the filtered contact list.
-* **Interactive Filtering:** Integrates `Chip` selection directly with the custom `Filter` implementation in `ContactAdapter` to update `RecyclerView` results instantly.
-* **Runtime Permissions:** Implements the modern Android runtime permission pattern (`ContextCompat.checkSelfPermission` and `ActivityCompat.requestPermissions`) to handle `READ_CONTACTS` requests safely without application crashes.
-
-### 3. Data Storage & Persistence
-* **SharedPreferences & Gson:** Serializes the processed `Contact` model objects into JSON format for permanent storage, enabling instant local loading without re-querying the system provider on every startup.
+Never lose the contact number of a verified local technician again or confuse them with personal contacts!
 
 ---
 
-## Technical Specifications
+## 🌟 Key Features
 
-* **Language:** Java
-* **Build System:** Gradle (Kotlin DSL / Groovy)
-* **Target SDK:** Android 14 (API level 34)
-* **Minimum SDK:** Android 6.0 (API level 23)
-* **Architecture Pattern:** Model-View-Adapter (MVA)
-* **UI Components:** Android Material Components (`RecyclerView`, `ChipGroup`, `FloatingActionButton`, `ImageButton`)
-* **JSON Serialization:** Google Gson `2.10+`
-
----
-
-## Application Workflow
-
-1. **Permission Check:** Upon launching `MainActivity`, the application checks for the `android.permission.READ_CONTACTS` runtime permission.
-2. **Local Cache Load:** Saved contact records are deserialized from `SharedPreferences` and loaded into the `RecyclerView`.
-3. **Contact Auto-Scan:** If permission is granted, `ContentResolver` queries the address book:
-   * Normalizes incoming phone numbers to 10-digit standard strings for accurate deduplication.
-   * Evaluates names against the relative blacklist.
-   * Categorizes valid records according to the prioritized keyword list.
-4. **UI Update:** The application updates the adapter dataset, appends newly discovered categories to the `ChipGroup`, and persists the updated dataset locally.
+- **📱 Smart Phonebook Scanner:** Automatically discovers repair and maintenance contacts from your phonebook using intelligent keyword matching while filtering out personal family contacts.
+- **☁️ Cloud Backup & Sync:** Seamlessly backs up service contacts to your personal Firebase Cloud Firestore directory for cross-device access.
+- **🎨 Modern Slate Dark UI:** Sleek, high-contrast dark design system built with Material 3 components, avatar initial circles, and custom status pills.
+- **🏷️ Dynamic Category Filtering:** Instant filtering by service trade (AC Repair, RO Service, Electrician, Plumber, Mechanic) and city via horizontal filter chips.
+- **🚫 Blacklist / Do Not Call Warning:** Mark bad service providers or unreliable technicians with a visible warning banner to prevent accidental re-hiring.
+- **📍 City Selection:** Filter local experts by specific target city directories.
+- **📲 Quick Actions:** One-tap calling, contact sharing, and instant vCard QR code generation for camera scanning.
 
 ---
 
-## Project Setup and Installation
+## 🛠️ Tech Stack & Architecture
+
+- **Language:** Java & Kotlin
+- **Min SDK:** 24 (Android 7.0)
+- **Target SDK:** 37
+- **UI Framework:** Android Material Components (Material 3), RecyclerView, CoordinatorLayout, ConstraintLayout
+- **Database & Cloud:** SQLite (`DatabaseHelper`), Firebase Authentication (Phone Auth), Firebase Firestore
+- **Security & Analysis:** GitHub CodeQL, Dependabot Security Analysis, ProGuard/R8
+- **CI/CD:** GitHub Actions (Automated Build, Test, CodeQL Analysis, Release APK)
+
+---
+
+## 📦 Downloads & Releases
+
+You can download the latest compiled APK directly from GitHub Releases:
+
+- 🚀 **[Download Latest FixitBhai APK](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
+
+Alternatively, build the application directly from source:
+```bash
+./gradlew assembleDebug
+```
+The generated APK will be located at `app/build/outputs/apk/debug/app-debug.apk`.
+
+---
+
+## 🔒 Security & Vulnerability Reporting
+
+Security and user privacy are fundamental to FixitBhai:
+- **No Unused Data Access:** Contact scanning is strictly performed locally on-device.
+- **Vulnerability Reporting:** If you discover a security issue, please review our [Security Policy](.github/SECURITY.md) and report it privately through [GitHub Private Vulnerability Reporting](https://github.com/ShashankS1011/FixitBhai/security/advisories/new).
+
+---
+
+## 🏗️ Building From Source
 
 ### Prerequisites
-* Android Studio Jellyfish (2023.3.1) or newer
-* Java Development Kit (JDK) 17 or higher
-* Physical Android device or Emulator running Android 6.0 (API Level 23) or higher
+- Android Studio Ladybug (2024.2.1) or newer
+- JDK 17+
+- Android SDK 35/37
 
-### Installation Steps
-
-1. **Clone the Repository**
+### Build Steps
+1. Clone the repository:
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/FixitBhai.git](https://github.com/YOUR_USERNAME/FixitBhai.git)
+   git clone https://github.com/ShashankS1011/FixitBhai.git
+   cd FixitBhai
    ```
-
-2. **Open in Android Studio**
-   * Launch Android Studio.
-   * Select **File > Open** and select the cloned `FixitBhai` project root directory.
-
-3. **Sync Gradle and Build**
-   * Allow Android Studio to download required dependencies and sync Gradle.
-   * Connect an Android device or launch an emulator.
-   * Select **Run > Run 'app'** (or press `Shift + F10`).
-   * Grant **Contacts Access** when prompted by the runtime dialog to execute the initial contact import.
+2. Build debug APK & run unit tests:
+   ```bash
+   ./gradlew testDebugUnitTest assembleDebug
+   ```
 
 ---
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for full details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
