@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_dark">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
         android:gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingHorizontal="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Glowing / Elevated Logo Card Container -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/logoContainer"
-            android:layout_width="128dp"
-            android:layout_height="128dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
             app:cardBackgroundColor="@color/surface_dark"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="8dp"
+            app:cardCornerRadius="36dp"
+            app:cardElevation="12dp"
             app:strokeColor="#334155"
-            app:strokeWidth="1.5dp">
+            app:strokeWidth="2dp">
 
             <ImageView
                 android:id="@+id/imgLogo"
-                android:layout_width="84dp"
-                android:layout_height="84dp"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_fixitbhai_logo" />
@@ -35,37 +40,41 @@
             android:id="@+id/tvSplashTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="28dp"
+            android:letterSpacing="0.02"
             android:text="FixitBhai"
             android:textColor="@color/text_primary"
-            android:textSize="32sp"
+            android:textSize="36sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:text="Local service contacts, sorted."
             android:textColor="@color/text_secondary"
-            android:textSize="15sp" />
+            android:textSize="16sp" />
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/primary_blue" />
+
     </LinearLayout>
 
-    <LinearLayout
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="32dp"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_marginBottom="40dp"
+        android:text="Your Hand-Picked Local Experts"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Your Hand-Picked Local Experts"
-            android:textColor="@color/accent_blue"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
