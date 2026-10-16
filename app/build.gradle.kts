@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.fixitbhai"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.fixitbhai"
@@ -20,15 +18,27 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+        }
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -39,6 +49,10 @@ dependencies {
     // Firebase dependencies
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+
+    // Jetpack Navigation
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
 
     // Other UI and Google Auth dependencies
     implementation(libs.activity.ktx)
