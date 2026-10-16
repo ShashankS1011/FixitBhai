@@ -45,9 +45,20 @@ public class ContactDetailActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         firestore = FirebaseFirestore.getInstance();
 
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Technician Details");
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         initViews();
         extractIntentData();
         setupListeners();
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 
     private void initViews() {

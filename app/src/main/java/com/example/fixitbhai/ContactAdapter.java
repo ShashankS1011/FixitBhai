@@ -80,9 +80,9 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         // ----------------------------------------
 
         if (contact.isDoNotCall()) {
-            holder.tvName.setTextColor(Color.RED);
+            holder.tvName.setTextColor(Color.parseColor("#EF4444")); // Warning Red
         } else {
-            holder.tvName.setTextColor(Color.WHITE);
+            holder.tvName.setTextColor(Color.parseColor("#F8FAFC")); // Slate White
         }
 
         // Standard Click -> Open Details
