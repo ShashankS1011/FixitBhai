@@ -131,6 +131,20 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             });
         }
 
+        if (holder.btnWhatsApp != null) {
+            holder.btnWhatsApp.setOnClickListener(v -> {
+                String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
+                String message = "Hello " + contact.getName() + ", I found your contact on FixitBhai for " + contact.getCategory() + " service.";
+                try {
+                    Intent waIntent = new Intent(Intent.ACTION_VIEW);
+                    waIntent.setData(Uri.parse("https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + Uri.encode(message)));
+                    context.startActivity(waIntent);
+                } catch (Exception e) {
+                    Toast.makeText(context, "WhatsApp is not installed on this device", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
         if (holder.btnShare != null) {
             holder.btnShare.setOnClickListener(v -> {
                 String shareMessage = "FixitBhai Technician Contact:\n" +
@@ -178,7 +192,9 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                 boolean matchesCategory = categoryPattern.isEmpty()
                         || categoryPattern.equalsIgnoreCase("all")
                         || (item.getCategory() != null && item.getCategory().toLowerCase().contains(categoryPattern))
-                        || (item.getName() != null && item.getName().toLowerCase().contains(categoryPattern));
+                        || (item.getName() != null && item.getName().toLowerCase().contains(categoryPattern))
+                        || (item.getPhone() != null && item.getPhone().replaceAll("[^0-9]", "").contains(categoryPattern))
+                        || (item.getNotes() != null && item.getNotes().toLowerCase().contains(categoryPattern));
 
                 boolean matchesCity = currentCityFilter.isEmpty()
                         || (item.getCity() != null && item.getCity().equalsIgnoreCase(currentCityFilter));
@@ -223,7 +239,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity;
-        ImageButton btnCall, btnShare;
+        ImageButton btnCall, btnShare, btnWhatsApp;
         MaterialCardView cardContact;
 
         public ContactViewHolder(@NonNull View itemView) {
@@ -232,6 +248,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             tvPhone = itemView.findViewById(R.id.tvPhone);
             btnCall = itemView.findViewById(R.id.btnCall);
             btnShare = itemView.findViewById(R.id.btnShare);
+            btnWhatsApp = itemView.findViewById(R.id.btnWhatsApp);
 
             tvAvatar = itemView.findViewById(R.id.tvAvatar);
             tvCategoryCity = itemView.findViewById(R.id.tvCategoryCity);

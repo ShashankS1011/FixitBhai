@@ -115,6 +115,16 @@
                     app:tint="@color/text_secondary" />
 
                 <ImageButton
+                    android:id="@+id/btnWhatsApp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/btn_whatsapp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_whatsapp" />
+
+                <ImageButton
                     android:id="@+id/btnCall"
                     android:layout_width="40dp"
                     android:layout_height="40dp"

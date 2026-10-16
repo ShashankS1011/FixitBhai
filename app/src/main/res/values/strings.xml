@@ -23,4 +23,6 @@
     <string name="select_city">Select City</string>
     <string name="badge_cloud">Cloud</string>
     <string name="badge_local">Local</string>
+    <string name="search_hint">Search name, phone, service, or notes&#8230;</string>
+    <string name="btn_whatsapp">WhatsApp Contact</string>
 </resources>
