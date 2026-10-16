@@ -29,7 +29,7 @@
             android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="City Help"
-            android:src="@android:drawable/ic_menu_help"
+            android:src="@drawable/ic_help"
             app:tint="@color/accent_blue" />
     </RelativeLayout>
 

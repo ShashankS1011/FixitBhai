@@ -9,7 +9,7 @@
     app:cardBackgroundColor="@color/surface_dark"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
-    app:strokeColor="#334155"
+    app:strokeColor="@color/card_stroke"
     app:strokeWidth="1dp">
 
     <RelativeLayout
@@ -111,7 +111,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Share Contact"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_share"
+                    android:src="@drawable/ic_share"
                     app:tint="@color/text_secondary" />
 
                 <ImageButton
@@ -132,7 +132,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Call Contact"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_call"
+                    android:src="@drawable/ic_phone"
                     app:tint="@color/accent_blue" />
             </LinearLayout>
         </LinearLayout>

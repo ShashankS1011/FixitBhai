@@ -71,7 +71,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Cloud Import"
                     android:padding="8dp"
-                    android:src="@android:drawable/stat_sys_download_done"
+                    android:src="@drawable/ic_cloud_download"
                     app:tint="@color/accent_blue" />
 
                 <!-- Logout Button -->
@@ -83,7 +83,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Logout"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_lock_power_off"
+                    android:src="@drawable/ic_logout"
                     app:tint="@color/text_secondary" />
 
                 <!-- About Button -->
@@ -94,7 +94,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="About Info"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_dialog_info"
+                    android:src="@drawable/ic_info"
                     app:tint="@color/text_secondary" />
 
             </LinearLayout>
@@ -119,7 +119,7 @@
             app:boxStrokeColor="@color/accent_blue"
             app:endIconMode="clear_text"
             app:endIconTint="@color/text_secondary"
-            app:startIconDrawable="@android:drawable/ic_menu_search"
+            app:startIconDrawable="@drawable/ic_search"
             app:startIconTint="@color/accent_blue">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -216,7 +216,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         android:contentDescription="Search &amp; Sync"
-        android:src="@android:drawable/ic_menu_search"
+        android:src="@drawable/ic_search"
         app:backgroundTint="@color/primary_blue"
         app:tint="@color/text_primary" />
 

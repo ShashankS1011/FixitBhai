@@ -94,7 +94,7 @@
                         app:boxStrokeColor="@color/primary_blue"
                         app:prefixText="+91 "
                         app:prefixTextColor="@color/accent_blue"
-                        app:startIconDrawable="@android:drawable/ic_menu_call"
+                        app:startIconDrawable="@drawable/ic_phone"
                         app:startIconTint="@color/accent_blue">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -122,7 +122,7 @@
                         app:boxCornerRadiusTopEnd="14dp"
                         app:boxCornerRadiusTopStart="14dp"
                         app:boxStrokeColor="@color/primary_blue"
-                        app:startIconDrawable="@android:drawable/ic_lock_lock"
+                        app:startIconDrawable="@drawable/ic_lock"
                         app:startIconTint="@color/accent_blue">
 
                         <com.google.android.material.textfield.TextInputEditText
