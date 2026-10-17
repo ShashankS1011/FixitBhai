@@ -203,18 +203,6 @@
                         app:strokeColor="#334155"
                         app:strokeWidth="1dp" />
 
-                    <!-- Guest Mode Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnGuestMode"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="8dp"
-                        android:text="Continue as Guest"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

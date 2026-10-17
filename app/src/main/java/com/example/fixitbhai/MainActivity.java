@@ -241,8 +241,38 @@ public class MainActivity extends AppCompatActivity {
                     displaySelectionDialog(cloudContacts);
                 })
                 .addOnFailureListener(e -> {
+                    Log.w("FixitBhai", "Shared city cloud query failed: " + e.getMessage() + ". Trying personal cloud backup...");
+                    fetchUserPersonalCloudContacts(currentUser.getUid());
+                });
+    }
+
+    private void fetchUserPersonalCloudContacts(String uid) {
+        firestore.collection("users")
+                .document(uid)
+                .collection("contacts")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (progressBar != null) progressBar.setVisibility(View.GONE);
-                    Toast.makeText(this, "Failed to fetch cloud contacts: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    List<Contact> cloudContacts = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Contact contact = doc.toObject(Contact.class);
+                        if (contact != null) {
+                            contact.setCloud(true);
+                            cloudContacts.add(contact);
+                        }
+                    }
+
+                    if (cloudContacts.isEmpty()) {
+                        Toast.makeText(this, "No cloud contacts found in your account.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    displaySelectionDialog(cloudContacts);
+                })
+                .addOnFailureListener(e -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, "Permission Denied: Please enable read access in Firebase Console Rules.", Toast.LENGTH_LONG).show();
                 });
     }
 

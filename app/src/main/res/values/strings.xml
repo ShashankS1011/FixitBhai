@@ -25,4 +25,5 @@
     <string name="badge_local">Local</string>
     <string name="search_hint">Search name, phone, service, or notes&#8230;</string>
     <string name="btn_whatsapp">WhatsApp Contact</string>
+    <string name="default_web_client_id">150320496415-p5f2j4k2j4k2.apps.googleusercontent.com</string>
 </resources>

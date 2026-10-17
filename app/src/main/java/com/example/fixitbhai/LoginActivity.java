@@ -38,7 +38,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
 
     private TextInputEditText etEmail, etPassword;
-    private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn, btnGuestMode;
+    private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn;
     private TextView tvLoginTitle, tvLoginSubtitle;
 
     private FirebaseAuth mAuth;
@@ -59,13 +59,11 @@ public class LoginActivity extends AppCompatActivity {
         btnAuthAction = findViewById(R.id.btnAuthAction);
         btnToggleMode = findViewById(R.id.btnToggleMode);
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
-        btnGuestMode = findViewById(R.id.btnGuestMode);
         tvLoginTitle = findViewById(R.id.tvLoginTitle);
         tvLoginSubtitle = findViewById(R.id.tvLoginSubtitle);
 
         btnAuthAction.setOnClickListener(v -> performEmailAuth());
         btnToggleMode.setOnClickListener(v -> toggleAuthMode());
-        btnGuestMode.setOnClickListener(v -> performGuestSignIn());
         btnGoogleSignIn.setOnClickListener(v -> performGoogleSignIn());
     }
 
@@ -139,12 +137,7 @@ public class LoginActivity extends AppCompatActivity {
     private void performGoogleSignIn() {
         try {
             int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
-            String webClientId = resId != 0 ? getString(resId) : "";
-
-            if (TextUtils.isEmpty(webClientId)) {
-                performGuestSignIn();
-                return;
-            }
+            String webClientId = resId != 0 ? getString(resId) : getString(R.string.default_web_client_id);
 
             GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
@@ -157,6 +150,8 @@ public class LoginActivity extends AppCompatActivity {
                     .build();
 
             CredentialManager credentialManager = CredentialManager.create(this);
+            Toast.makeText(this, "Opening Google Sign-In...", Toast.LENGTH_SHORT).show();
+
             credentialManager.getCredentialAsync(this, request, new CancellationSignal(), getMainExecutor(),
                     new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
                         @Override
@@ -171,7 +166,7 @@ public class LoginActivity extends AppCompatActivity {
                                         signInWithFirebaseCredential(authCredential);
                                     } catch (Exception e) {
                                         Log.e(TAG, "Google ID Token Parsing Error", e);
-                                        performGuestSignIn();
+                                        Toast.makeText(LoginActivity.this, "Google Sign-In Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 }
                             }
@@ -180,12 +175,12 @@ public class LoginActivity extends AppCompatActivity {
                         @Override
                         public void onError(@NonNull GetCredentialException e) {
                             Log.e(TAG, "Credential Manager Error", e);
-                            performGuestSignIn();
+                            Toast.makeText(LoginActivity.this, "Google Sign-In Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     });
         } catch (Exception e) {
             Log.e(TAG, "Google Sign In Setup Error", e);
-            performGuestSignIn();
+            Toast.makeText(this, "Google Sign-In Setup Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -199,21 +194,6 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         String err = task.getException() != null ? task.getException().getMessage() : "Google Sign-In failed";
                         Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
-                    }
-                });
-    }
-
-    private void performGuestSignIn() {
-        Toast.makeText(this, "Signing in...", Toast.LENGTH_SHORT).show();
-        mAuth.signInAnonymously()
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        syncLocalContactsToCloud();
-                        Toast.makeText(LoginActivity.this, "Signed in successfully!", Toast.LENGTH_SHORT).show();
-                        navigateToMain();
-                    } else {
-                        String err = task.getException() != null ? task.getException().getMessage() : "Sign-in failed";
-                        Toast.makeText(LoginActivity.this, "Sign In Error: " + err, Toast.LENGTH_LONG).show();
                     }
                 });
     }
