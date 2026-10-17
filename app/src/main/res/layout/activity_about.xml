@@ -40,9 +40,10 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvVersion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Version 2.7.0"
+            android:text="Version 3.2.0"
             android:textColor="@color/accent_blue"
             android:textSize="14sp"
             android:textStyle="bold" />

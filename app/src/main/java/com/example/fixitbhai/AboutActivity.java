@@ -36,6 +36,11 @@ public class AboutActivity extends AppCompatActivity {
             cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
         }
 
+        android.widget.TextView tvVersion = findViewById(R.id.tvVersion);
+        if (tvVersion != null) {
+            tvVersion.setText("Version " + BuildConfig.VERSION_NAME);
+        }
+
         com.google.android.material.button.MaterialButton btnCheckUpdates = findViewById(R.id.btnCheckUpdates);
         if (btnCheckUpdates != null) {
             btnCheckUpdates.setOnClickListener(v -> UpdateChecker.checkForUpdates(this, true, null));
