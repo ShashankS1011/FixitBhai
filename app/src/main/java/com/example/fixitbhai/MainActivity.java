@@ -508,12 +508,18 @@ public class MainActivity extends AppCompatActivity {
                 cityList.add(c);
             }
         }
-        if (!cityList.contains("Prayagraj")) cityList.add("Prayagraj");
-        if (!cityList.contains("Chennai")) cityList.add("Chennai");
-        if (!cityList.contains("Lucknow")) cityList.add("Lucknow");
-        if (!cityList.contains("Delhi")) cityList.add("Delhi");
-        if (!cityList.contains("Mumbai")) cityList.add("Mumbai");
-        if (!cityList.contains("Bengaluru")) cityList.add("Bengaluru");
+
+        String[] presetCities = {
+                "Gurgaon", "Noida", "Delhi", "Mathura", "Ghaziabad", "Faridabad",
+                "Prayagraj", "Chennai", "Lucknow", "Mumbai", "Bengaluru", "Hyderabad",
+                "Kolkata", "Pune", "Jaipur", "Kanpur", "Varanasi", "Indore", "Surat"
+        };
+        for (String preset : presetCities) {
+            if (!cityList.contains(preset)) {
+                cityList.add(preset);
+            }
+        }
+        cityList.add("➕ Add Custom City...");
 
         final String[] cityArray = cityList.toArray(new String[0]);
 
@@ -534,29 +540,64 @@ public class MainActivity extends AppCompatActivity {
         }
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            selectedCity = cityArray[position];
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+            String choice = cityArray[position];
+            if (choice.contains("Add Custom City")) {
+                dialog.dismiss();
+                showAddCustomCityDialog();
+            } else {
+                selectedCity = choice;
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
 
-            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+                if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
 
-            String filterCity = selectedCity.equalsIgnoreCase("All Cities") ? "" : selectedCity;
-            adapter.filterBy("", filterCity);
-            checkEmptyState();
+                adapter.filterBy("", getFilterCity());
+                checkEmptyState();
 
-            Toast.makeText(MainActivity.this, "Switched filter to: " + selectedCity, Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
+                Toast.makeText(MainActivity.this, "Switched filter to: " + selectedCity, Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
         });
 
         ImageButton btnCityHelp = dialogView.findViewById(R.id.btnCityHelp);
         if (btnCityHelp != null) {
             btnCityHelp.setOnClickListener(v -> new MaterialAlertDialogBuilder(MainActivity.this)
                     .setTitle("City Selection")
-                    .setMessage("FixitBhai dynamically organizes your service contacts by city (e.g. Chennai, Prayagraj, Lucknow, Delhi). Select 'All Cities' to view contacts across all cities at once!")
+                    .setMessage("FixitBhai organizes your contacts by city (e.g. Gurgaon, Noida, Delhi, Mathura, Prayagraj, Chennai). Select 'All Cities' to view contacts everywhere or tap 'Add Custom City' to type a new location!")
                     .setPositiveButton("Got It", (dialogInterface, i) -> dialogInterface.dismiss())
                     .show());
         }
         dialog.show();
+    }
+
+    private void showAddCustomCityDialog() {
+        com.google.android.material.textfield.TextInputLayout tilCustomCity = new com.google.android.material.textfield.TextInputLayout(this);
+        tilCustomCity.setHint("Enter City Name (e.g. Mathura, Agra)");
+        tilCustomCity.setPadding(32, 16, 32, 16);
+
+        TextInputEditText etCustomCity = new TextInputEditText(this);
+        etCustomCity.setInputType(android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        tilCustomCity.addView(etCustomCity);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Add Custom City")
+                .setView(tilCustomCity)
+                .setPositiveButton("Set City", (dialog, which) -> {
+                    String input = etCustomCity.getText() != null ? etCustomCity.getText().toString().trim() : "";
+                    if (!input.isEmpty()) {
+                        selectedCity = capitalizeWords(input);
+                        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                        prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+
+                        if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+
+                        adapter.filterBy("", getFilterCity());
+                        checkEmptyState();
+                        Toast.makeText(MainActivity.this, "Selected City: " + selectedCity, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
@@ -791,11 +832,12 @@ public class MainActivity extends AppCompatActivity {
                     }
 
             String[] majorCities = {
-                    "Chennai", "Prayagraj", "Lucknow", "Delhi", "New Delhi", "Mumbai",
-                    "Bengaluru", "Bangalore", "Hyderabad", "Kolkata", "Pune", "Ahmedabad",
-                    "Jaipur", "Kanpur", "Varanasi", "Noida", "Gurgaon", "Gurugram",
-                    "Chandigarh", "Bhopal", "Indore", "Patna", "Ranchi", "Surat",
-                    "Vadodara", "Coimbatore", "Kochi", "Trivandrum", "Visakhapatnam"
+                    "Gurgaon", "Gurugram", "Noida", "Greater Noida", "Ghaziabad", "Faridabad",
+                    "Mathura", "Delhi", "New Delhi", "Prayagraj", "Allahabad", "Chennai",
+                    "Lucknow", "Mumbai", "Bengaluru", "Bangalore", "Hyderabad", "Kolkata",
+                    "Pune", "Ahmedabad", "Jaipur", "Kanpur", "Varanasi", "Chandigarh",
+                    "Indore", "Bhopal", "Patna", "Ranchi", "Surat", "Vadodara",
+                    "Coimbatore", "Kochi", "Trivandrum", "Visakhapatnam", "Agra", "Meerut"
             };
 
             if (matchedCategory != null) {
