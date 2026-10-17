@@ -6,16 +6,17 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.cardview.widget.CardView;
+
+import com.google.android.material.card.MaterialCardView;
 
 public class AboutActivity extends AppCompatActivity {
 
-    // Update with your actual GitHub repository URL
     private static final String GITHUB_REPO_URL = "https://github.com/ShashankS1011/FixitBhai";
+    private static final String CONTRIBUTOR_URL = "https://github.com/ROGU3D3viL";
+    private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Enforce Dark Mode
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
         super.onCreate(savedInstanceState);
@@ -26,14 +27,27 @@ public class AboutActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        // Bind Developer Card and set Click Listener to open GitHub
-        CardView cardDeveloper = findViewById(R.id.cardDeveloper);
+        MaterialCardView cardDeveloper = findViewById(R.id.cardDeveloper);
         if (cardDeveloper != null) {
-            cardDeveloper.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_REPO_URL));
-                startActivity(intent);
-            });
+            cardDeveloper.setOnClickListener(v -> openUrl(GITHUB_REPO_URL));
         }
+
+        MaterialCardView cardContributor = findViewById(R.id.cardContributor);
+        if (cardContributor != null) {
+            cardContributor.setOnClickListener(v -> openUrl(CONTRIBUTOR_URL));
+        }
+
+        MaterialCardView cardFeedback = findViewById(R.id.cardFeedback);
+        if (cardFeedback != null) {
+            cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
+        }
+    }
+
+    private void openUrl(String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        } catch (Exception ignored) {}
     }
 
     @Override

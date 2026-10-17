@@ -332,23 +332,8 @@ public class MainActivity extends AppCompatActivity {
         if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.GONE);
         if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.GONE);
 
-        // Step 1: Fetch Cloud Directory First
-        CloudSyncHelper.fetchCloudContacts(selectedCity, dbHelper, cloudCount -> {
-
-            if (cloudCount > 0) {
-                contactList.clear();
-                contactList.addAll(dbHelper.getAllContacts());
-                saveContactsToStorage();
-                adapter.updateData(contactList);
-                refreshCategoryChips();
-                if (showToast) {
-                    Toast.makeText(MainActivity.this, "Added " + cloudCount + " verified experts from Cloud!", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            // Step 2: Proceed with existing phonebook scan logic
-            checkContactPermissionAndScan(showToast);
-        });
+        // Scan local phonebook contacts (cloud contacts are imported explicitly via the cloud button)
+        checkContactPermissionAndScan(showToast);
     }
 
     private void checkEmptyState() {
