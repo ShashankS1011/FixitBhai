@@ -51,21 +51,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_CITY + " TEXT DEFAULT 'Prayagraj'");
-        }
-        if (oldVersion < 3) {
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_RATING + " REAL DEFAULT 0.0");
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_NOTES + " TEXT");
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_DO_NOT_CALL + " INTEGER DEFAULT 0");
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_CLOUD + " INTEGER DEFAULT 0");
-        }
-        if (oldVersion < 5) {
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0");
-            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_REVIEW_TAGS + " TEXT DEFAULT ''");
-        }
+        try {
+            if (oldVersion < 2) {
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_CITY + " TEXT DEFAULT 'General'");
+            }
+            if (oldVersion < 3) {
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_RATING + " REAL DEFAULT 0.0");
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_NOTES + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_DO_NOT_CALL + " INTEGER DEFAULT 0");
+            }
+            if (oldVersion < 4) {
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_CLOUD + " INTEGER DEFAULT 0");
+            }
+            if (oldVersion < 5) {
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0");
+                db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_REVIEW_TAGS + " TEXT DEFAULT ''");
+            }
+        } catch (Exception ignored) {}
     }
 
     public long addContact(Contact contact) {
@@ -185,9 +187,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Helper method to parse database rows safely
     private Contact extractContactFromCursor(Cursor cursor) {
-        String name = cursor.getString(cursor.getColumnIndexOrThrow(KEY_NAME));
-        String phone = cursor.getString(cursor.getColumnIndexOrThrow(KEY_PHONE));
-        String category = cursor.getString(cursor.getColumnIndexOrThrow(KEY_CATEGORY));
+        int nameIdx = cursor.getColumnIndex(KEY_NAME);
+        String name = (nameIdx != -1 && !cursor.isNull(nameIdx)) ? cursor.getString(nameIdx) : "Unknown";
+
+        int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
+        String phone = (phoneIdx != -1 && !cursor.isNull(phoneIdx)) ? cursor.getString(phoneIdx) : "";
+
+        int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
+        String category = (catIdx != -1 && !cursor.isNull(catIdx)) ? cursor.getString(catIdx) : "General";
 
         int cityIdx = cursor.getColumnIndex(KEY_CITY);
         String city = (cityIdx != -1 && !cursor.isNull(cityIdx) && !cursor.getString(cityIdx).trim().isEmpty()) ? cursor.getString(cityIdx) : "General";
@@ -196,12 +203,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         float rating = (ratingIdx != -1) ? cursor.getFloat(ratingIdx) : 0.0f;
 
         int notesIdx = cursor.getColumnIndex(KEY_NOTES);
-        String notes = (notesIdx != -1) ? cursor.getString(notesIdx) : "";
+        String notes = (notesIdx != -1 && !cursor.isNull(notesIdx)) ? cursor.getString(notesIdx) : "";
 
         int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
         boolean dnc = (dncIdx != -1) && (cursor.getInt(dncIdx) == 1);
 
-        // Extract the isCloud flag
         int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
         boolean isCloud = (isCloudIdx != -1) && (cursor.getInt(isCloudIdx) == 1);
 
@@ -211,12 +217,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
         String reviewTags = (revIdx != -1 && !cursor.isNull(revIdx)) ? cursor.getString(revIdx) : "";
 
-        // FIXED: Using the updated 5-parameter constructor
         Contact contact = new Contact(name, phone, category, city, isCloud);
 
-        // Pull the ID from the database and set it on the object
-        long dbId = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID));
-        contact.setId(String.valueOf(dbId));
+        int idIdx = cursor.getColumnIndex(KEY_ID);
+        if (idIdx != -1) {
+            contact.setId(String.valueOf(cursor.getLong(idIdx)));
+        }
 
         contact.setRating(rating);
         contact.setNotes(notes);

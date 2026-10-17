@@ -24,7 +24,10 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.button.MaterialButton;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -335,44 +338,121 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void displaySelectionDialog(List<Contact> cloudContacts) {
-        String[] contactLabels = new String[cloudContacts.size()];
-        boolean[] checkedItems = new boolean[cloudContacts.size()];
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_cloud_import, null);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
 
-        for (int i = 0; i < cloudContacts.size(); i++) {
-            Contact c = cloudContacts.get(i);
-            String uploader = c.getUploadedBy();
-            String uploaderText = (uploader != null && !uploader.isEmpty()) ? "\nVerified by: " + uploader : "";
-            contactLabels[i] = c.getName() + " (" + c.getCategory() + " • " + c.getCity() + ")\n" + c.getPhone() + uploaderText;
-            checkedItems[i] = !dbHelper.contactExists(c.getPhone());
+        TextView tvCloudSubtitle = dialogView.findViewById(R.id.tvCloudSubtitle);
+        if (tvCloudSubtitle != null) {
+            tvCloudSubtitle.setText(cloudContacts.size() + " Verified Experts available in " + selectedCity);
         }
 
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Cloud Contacts for " + selectedCity)
-                .setMultiChoiceItems(contactLabels, checkedItems, (dialog, which, isChecked) -> checkedItems[which] = isChecked)
-                .setPositiveButton("Import Selected", (dialog, which) -> {
-                    int importedCount = 0;
-                    for (int i = 0; i < cloudContacts.size(); i++) {
-                        if (checkedItems[i]) {
-                            Contact selectedContact = cloudContacts.get(i);
-                            dbHelper.addContact(selectedContact);
-                            importedCount++;
-                        }
-                    }
+        Set<String> existingLocalPhones = new HashSet<>();
+        List<Contact> localContacts = dbHelper.getAllContacts();
+        for (Contact c : localContacts) {
+            if (c.getPhone() != null) existingLocalPhones.add(c.getPhone());
+        }
 
-                    if (importedCount > 0) {
-                        contactList.clear();
-                        contactList.addAll(dbHelper.getAllContacts());
-                        saveContactsToStorage();
-                        adapter.updateData(contactList);
-                        adapter.filterBy("", selectedCity);
-                        refreshCategoryChips();
-                        checkEmptyState();
-                    }
+        RecyclerView rvCloudContacts = dialogView.findViewById(R.id.rvCloudContacts);
+        MaterialButton btnImportSelected = dialogView.findViewById(R.id.btnImportSelected);
+        MaterialButton btnCancelCloud = dialogView.findViewById(R.id.btnCancelCloud);
+        MaterialButton btnSelectAll = dialogView.findViewById(R.id.btnSelectAll);
+        TextInputEditText etCloudSearch = dialogView.findViewById(R.id.etCloudSearch);
+        ChipGroup chipGroupCloudCategory = dialogView.findViewById(R.id.chipGroupCloudCategory);
 
-                    Toast.makeText(MainActivity.this, importedCount + " contact(s) saved to device", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        if (rvCloudContacts != null) {
+            rvCloudContacts.setLayoutManager(new LinearLayoutManager(this));
+        }
+
+        CloudContactAdapter cloudAdapter = new CloudContactAdapter(cloudContacts, existingLocalPhones, count -> {
+            if (btnImportSelected != null) {
+                btnImportSelected.setText("Import Selected (" + count + ")");
+            }
+        });
+        if (rvCloudContacts != null) {
+            rvCloudContacts.setAdapter(cloudAdapter);
+        }
+
+        if (etCloudSearch != null) {
+            etCloudSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    cloudAdapter.getFilter().filter(s != null ? s.toString() : "");
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        if (btnSelectAll != null) {
+            btnSelectAll.setOnClickListener(v -> {
+                boolean select = !cloudAdapter.isAllSelected();
+                cloudAdapter.selectAll(select);
+                btnSelectAll.setText(select ? "Deselect All" : "Select All");
+            });
+        }
+
+        if (chipGroupCloudCategory != null) {
+            chipGroupCloudCategory.removeAllViews();
+            Chip allChip = new Chip(this);
+            allChip.setText("All");
+            allChip.setCheckable(true);
+            allChip.setChecked(true);
+            allChip.setOnClickListener(v -> cloudAdapter.filterByCategory(""));
+            chipGroupCloudCategory.addView(allChip);
+
+            Set<String> categories = new LinkedHashSet<>();
+            for (Contact c : cloudContacts) {
+                if (c.getCategory() != null && !c.getCategory().trim().isEmpty()) {
+                    categories.add(c.getCategory().trim());
+                }
+            }
+
+            for (String categoryName : categories) {
+                Chip categoryChip = new Chip(this);
+                categoryChip.setText(categoryName);
+                categoryChip.setCheckable(true);
+                categoryChip.setOnClickListener(v -> cloudAdapter.filterByCategory(categoryName));
+                chipGroupCloudCategory.addView(categoryChip);
+            }
+        }
+
+        if (btnCancelCloud != null) {
+            btnCancelCloud.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnImportSelected != null) {
+            btnImportSelected.setOnClickListener(v -> {
+                List<Contact> selectedContacts = cloudAdapter.getSelectedContacts();
+                int importedCount = 0;
+                for (Contact c : selectedContacts) {
+                    if (!dbHelper.contactExists(c.getPhone())) {
+                        dbHelper.addContact(c);
+                        importedCount++;
+                    }
+                }
+
+                if (importedCount > 0) {
+                    contactList.clear();
+                    contactList.addAll(dbHelper.getAllContacts());
+                    saveContactsToStorage();
+                    adapter.updateData(contactList);
+                    adapter.filterBy("", selectedCity.equalsIgnoreCase("All Cities") ? "" : selectedCity);
+                    refreshCategoryChips();
+                    checkEmptyState();
+                }
+
+                Toast.makeText(MainActivity.this, importedCount + " cloud contact(s) imported to your device!", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
     }
 
     // --- COMBINED SYNC ORCHESTRATOR ---
