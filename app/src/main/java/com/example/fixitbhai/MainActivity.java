@@ -153,28 +153,33 @@ public class MainActivity extends AppCompatActivity {
                 View itemView = viewHolder.itemView;
                 if (dX != 0) {
                     Paint p = new Paint();
-                    p.setColor(Color.parseColor("#DC2626"));
+                    p.setAntiAlias(true);
+                    p.setColor(Color.parseColor("#DC2626")); // Warning Red
 
                     RectF background;
                     if (dX > 0) {
-                        background = new RectF((float) itemView.getLeft(), (float) itemView.getTop() + 12, dX + 24, (float) itemView.getBottom() - 12);
+                        // Swiping Right
+                        background = new RectF((float) itemView.getLeft() + 12, (float) itemView.getTop() + 10, (float) itemView.getLeft() + dX, (float) itemView.getBottom() - 10);
                     } else {
-                        background = new RectF((float) itemView.getRight() + dX - 24, (float) itemView.getTop() + 12, (float) itemView.getRight(), (float) itemView.getBottom() - 12);
+                        // Swiping Left
+                        background = new RectF((float) itemView.getRight() + dX, (float) itemView.getTop() + 10, (float) itemView.getRight() - 12, (float) itemView.getBottom() - 10);
                     }
-                    c.drawRoundRect(background, 32, 32, p);
+                    c.drawRoundRect(background, 28, 28, p);
 
                     Drawable icon = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_delete);
-                    if (icon != null) {
+                    if (icon != null && Math.abs(dX) > 60) {
                         int iconMargin = (itemView.getHeight() - icon.getIntrinsicHeight()) / 2;
                         int iconTop = itemView.getTop() + iconMargin;
                         int iconBottom = iconTop + icon.getIntrinsicHeight();
 
                         if (dX > 0) {
-                            int iconLeft = itemView.getLeft() + iconMargin;
+                            // Swiping Right -> Icon positioned on Left
+                            int iconLeft = itemView.getLeft() + 32;
                             int iconRight = iconLeft + icon.getIntrinsicWidth();
                             icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
                         } else {
-                            int iconRight = itemView.getRight() - iconMargin;
+                            // Swiping Left -> Icon positioned on Right
+                            int iconRight = itemView.getRight() - 32;
                             int iconLeft = iconRight - icon.getIntrinsicWidth();
                             icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
                         }
