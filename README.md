@@ -78,6 +78,14 @@ Security and user privacy are fundamental to FixitBhai:
 
 ---
 
+## Contributors & Acknowledgements
+
+Special thanks to the contributors who help improve FixitBhai:
+
+- 👤 **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication & OTP login issue.
+
+---
+
 ## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
