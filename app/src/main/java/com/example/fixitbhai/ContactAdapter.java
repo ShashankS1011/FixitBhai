@@ -240,6 +240,8 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                         || (item.getReviewTags() != null && item.getReviewTags().toLowerCase().contains(categoryPattern));
 
                 boolean matchesCity = currentCityFilter.isEmpty()
+                        || currentCityFilter.equalsIgnoreCase("all")
+                        || currentCityFilter.equalsIgnoreCase("all cities")
                         || (item.getCity() != null && item.getCity().equalsIgnoreCase(currentCityFilter));
 
                 if (matchesCategory && matchesCity) {

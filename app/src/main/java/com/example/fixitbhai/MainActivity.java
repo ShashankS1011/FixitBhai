@@ -680,7 +680,7 @@ public class MainActivity extends AppCompatActivity {
             Chip categoryChip = new Chip(this);
             categoryChip.setText(categoryName);
             categoryChip.setCheckable(true);
-            categoryChip.setOnClickListener(v -> adapter.filterBy(categoryName, selectedCity));
+            categoryChip.setOnClickListener(v -> adapter.filterBy(categoryName, getFilterCity()));
             chipGroupCategories.addView(categoryChip);
         }
     }
@@ -849,7 +849,7 @@ public class MainActivity extends AppCompatActivity {
                     saveContactsToStorage();
 
                     adapter.updateData(contactList);
-                    adapter.filterBy("", selectedCity);
+                    adapter.filterBy("", getFilterCity());
                     refreshCategoryChips();
 
                     if (showToast) {
@@ -860,7 +860,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Scan Complete! No new local service contacts found.", Toast.LENGTH_SHORT).show();
                 }
 
-                adapter.filterBy("", selectedCity);
+                adapter.filterBy("", getFilterCity());
                 checkEmptyState();
             });
 
