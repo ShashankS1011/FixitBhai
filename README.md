@@ -82,7 +82,7 @@ Security and user privacy are fundamental to FixitBhai:
 
 Special thanks to the contributors who help improve FixitBhai:
 
-- **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication & OTP login issue.
+- **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication issue and cross-user cloud contact synchronization bug.
 
 ---
 
