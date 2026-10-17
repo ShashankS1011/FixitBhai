@@ -37,10 +37,10 @@ Never lose the contact number of a verified local technician again or confuse th
 
 ## Downloads & Releases
 
-You can download the latest compiled FixitBhai APK directly:
+Download the latest compiled application package directly:
 
-- 🚀 **[Download Latest FixitBhai APK (v1.2.0)](https://github.com/ShashankS1011/FixitBhai/releases/latest/download/app-debug.apk)**
-- 📦 **[View Latest GitHub Release Page](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
+- **[Download FixitBhai APK](https://github.com/ShashankS1011/FixitBhai/releases/latest/download/app-debug.apk)**
+- **[View All Releases](https://github.com/ShashankS1011/FixitBhai/releases)**
 
 Alternatively, build the application directly from source:
 ```bash
@@ -82,7 +82,7 @@ Security and user privacy are fundamental to FixitBhai:
 
 Special thanks to the contributors who help improve FixitBhai:
 
-- 👤 **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication & OTP login issue.
+- **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication & OTP login issue.
 
 ---
 
