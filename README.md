@@ -37,9 +37,10 @@ Never lose the contact number of a verified local technician again or confuse th
 
 ## Downloads & Releases
 
-You can download the latest compiled APK directly from GitHub Releases:
+You can download the latest compiled FixitBhai APK directly:
 
-- **[Download Latest FixitBhai APK](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
+- 🚀 **[Download Latest FixitBhai APK (v1.2.0)](https://github.com/ShashankS1011/FixitBhai/releases/latest/download/app-debug.apk)**
+- 📦 **[View Latest GitHub Release Page](https://github.com/ShashankS1011/FixitBhai/releases/latest)**
 
 Alternatively, build the application directly from source:
 ```bash

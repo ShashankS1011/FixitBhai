@@ -51,8 +51,8 @@ public class LoginActivity extends AppCompatActivity {
         btnSendOtp = findViewById(R.id.btnSendOtp);
         btnResendCode = findViewById(R.id.btnResendCode);
 
-        // RESTRICT PHONE NUMBER TO 10 DIGITS ONLY
-        etPhone.setFilters(new InputFilter[]{new InputFilter.LengthFilter(10)});
+        // ALLOW PHONE NUMBER INPUT UP TO 16 CHARS FOR COUNTRY CODE / SPACES
+        etPhone.setFilters(new InputFilter[]{new InputFilter.LengthFilter(16)});
 
         btnSendOtp.setOnClickListener(v -> {
             if (!isOtpSent) {
@@ -75,9 +75,18 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void sendOTP(PhoneAuthProvider.ForceResendingToken token) {
-        String rawPhone = Objects.requireNonNull(etPhone.getText()).toString().trim().replaceAll("[^0-9]", "");
+        String digits = Objects.requireNonNull(etPhone.getText()).toString().trim().replaceAll("[^0-9]", "");
 
-        if (rawPhone.isEmpty() || rawPhone.length() < 10) {
+        String rawPhone = digits;
+        if (digits.length() == 12 && digits.startsWith("91")) {
+            rawPhone = digits.substring(2);
+        } else if (digits.length() == 11 && digits.startsWith("0")) {
+            rawPhone = digits.substring(1);
+        } else if (digits.length() > 10) {
+            rawPhone = digits.substring(digits.length() - 10);
+        }
+
+        if (rawPhone.length() != 10) {
             etPhone.setError("Enter a valid 10-digit phone number");
             return;
         }
@@ -96,7 +105,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         PhoneAuthProvider.verifyPhoneNumber(builder.build());
-        Toast.makeText(this, "Sending OTP...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Sending OTP to " + formattedPhone + "...", Toast.LENGTH_SHORT).show();
     }
 
     private final PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks =
@@ -163,7 +172,10 @@ public class LoginActivity extends AppCompatActivity {
 
         WriteBatch batch = firestore.batch();
         for (Contact c : localContacts) {
-            batch.set(firestore.collection("users").document(uid).collection("contacts").document(c.getPhone()), c.toMap());
+            String phone = c.getPhone();
+            if (phone == null || phone.trim().isEmpty()) continue;
+            String docKey = phone.trim().replaceAll("[/\\s]", "_");
+            batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), c.toMap());
         }
         batch.commit();
     }
