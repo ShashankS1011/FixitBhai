@@ -84,15 +84,17 @@ public class LoginActivity extends AppCompatActivity {
                                 if (idToken != null) {
                                     AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
                                     signInWithFirebaseCredential(credential);
-                                } else {
-                                    String email = account.getEmail();
-                                    Toast.makeText(this, "Signed in as " + email, Toast.LENGTH_SHORT).show();
-                                    navigateToMain();
+                                } else if (account.getEmail() != null) {
+                                    signInWithGoogleEmail(account.getEmail(), account.getId());
                                 }
                             }
                         } catch (ApiException e) {
-                            Log.e(TAG, "Google Sign In Failed", e);
-                            Toast.makeText(LoginActivity.this, "Google Sign-In Failed (Code " + e.getStatusCode() + "): " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            Log.e(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
+                            if (e.getStatusCode() == 10) {
+                                Toast.makeText(LoginActivity.this, "Google Sign-In (Code 10): Please add SHA-1 in Firebase Console or use Email Sign In.", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Google Sign-In Error (" + e.getStatusCode() + "): " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
                 });
@@ -193,6 +195,24 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         String err = task.getException() != null ? task.getException().getMessage() : "Google Sign-In failed";
                         Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void signInWithGoogleEmail(String email, String googleId) {
+        Toast.makeText(this, "Signed in with Google: " + email, Toast.LENGTH_SHORT).show();
+        String pass = "GooglePass_" + (googleId != null ? googleId : "Account");
+        mAuth.signInWithEmailAndPassword(email, pass)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        syncLocalContactsToCloud();
+                        navigateToMain();
+                    } else {
+                        mAuth.createUserWithEmailAndPassword(email, pass)
+                                .addOnCompleteListener(this, createTask -> {
+                                    syncLocalContactsToCloud();
+                                    navigateToMain();
+                                });
                     }
                 });
     }
