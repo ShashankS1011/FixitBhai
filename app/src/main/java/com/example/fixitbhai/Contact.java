@@ -34,7 +34,7 @@ public class Contact implements Serializable {
 
     // Default No-Argument Constructor (Required for Firestore doc.toObject(Contact.class))
     public Contact() {
-        this.city = "Prayagraj";
+        this.city = "General";
         this.notes = "";
         this.rating = 0.0f;
         this.doNotCall = false;
@@ -52,7 +52,7 @@ public class Contact implements Serializable {
         this.name = name;
         this.phone = formatWithCountryCode(phone);
         this.category = category;
-        this.city = city != null ? city : "Prayagraj";
+        this.city = (city != null && !city.trim().isEmpty()) ? city.trim() : "General";
         this.isCloud = isCloud;
     }
 
@@ -62,7 +62,7 @@ public class Contact implements Serializable {
         this.name = name;
         this.phone = formatWithCountryCode(phone);
         this.category = category;
-        this.city = city != null ? city : "Prayagraj";
+        this.city = (city != null && !city.trim().isEmpty()) ? city.trim() : "General";
         this.rating = rating;
         this.notes = notes != null ? notes : "";
         this.doNotCall = doNotCall;

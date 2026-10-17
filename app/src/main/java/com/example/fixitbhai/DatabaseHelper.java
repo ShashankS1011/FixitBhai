@@ -190,7 +190,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String category = cursor.getString(cursor.getColumnIndexOrThrow(KEY_CATEGORY));
 
         int cityIdx = cursor.getColumnIndex(KEY_CITY);
-        String city = (cityIdx != -1 && !cursor.isNull(cityIdx)) ? cursor.getString(cityIdx) : "Prayagraj";
+        String city = (cityIdx != -1 && !cursor.isNull(cityIdx) && !cursor.getString(cityIdx).trim().isEmpty()) ? cursor.getString(cityIdx) : "General";
 
         int ratingIdx = cursor.getColumnIndex(KEY_RATING);
         float rating = (ratingIdx != -1) ? cursor.getFloat(ratingIdx) : 0.0f;
