@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     if (adapter != null) {
-                        adapter.filterBy(s != null ? s.toString() : "", selectedCity);
+                        adapter.filterBy(s != null ? s.toString() : "", getFilterCity());
                     }
                 }
 
@@ -219,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         };
         new ItemTouchHelper(swipeToDeleteCallback).attachToRecyclerView(recyclerViewContacts);
 
-        adapter.filterBy("", selectedCity);
+        adapter.filterBy("", getFilterCity());
         checkEmptyState();
 
         // Trigger the Combined Sync Process on app launch
@@ -246,12 +246,19 @@ public class MainActivity extends AppCompatActivity {
                 contactList.addAll(updatedList);
                 if (adapter != null) {
                     adapter.updateData(contactList);
-                    adapter.filterBy("", selectedCity);
+                    adapter.filterBy("", getFilterCity());
                 }
                 refreshCategoryChips();
             }
         }
         checkEmptyState();
+    }
+
+    private String getFilterCity() {
+        if (selectedCity == null || selectedCity.equalsIgnoreCase("All Cities") || selectedCity.equalsIgnoreCase("All")) {
+            return "";
+        }
+        return selectedCity;
     }
 
     // --- CLOUD CONTACT PICKER LOGIC ---
@@ -264,47 +271,49 @@ public class MainActivity extends AppCompatActivity {
 
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
-        // Fetch shared public cloud directory for the selected city so ALL users see uploaded contacts
-        firestore.collection("cities")
-                .document(selectedCity)
-                .collection("contacts")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> queryTask;
+        if (getFilterCity().isEmpty()) {
+            queryTask = firestore.collectionGroup("contacts").get();
+        } else {
+            queryTask = firestore.collection("cities").document(selectedCity).collection("contacts").get();
+        }
 
-                    List<Contact> cloudContacts = new ArrayList<>();
-                    Set<String> seenPhones = new HashSet<>();
+        queryTask.addOnSuccessListener(queryDocumentSnapshots -> {
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
 
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Contact contact = doc.toObject(Contact.class);
-                        if (contact != null && contact.getPhone() != null) {
-                            String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
-                            if (!seenPhones.contains(cleanPhone)) {
-                                seenPhones.add(cleanPhone);
-                                contact.setCloud(true);
-                                cloudContacts.add(contact);
-                            }
-                        }
+            List<Contact> cloudContacts = new ArrayList<>();
+            Set<String> seenPhones = new HashSet<>();
+
+            for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                Contact contact = doc.toObject(Contact.class);
+                if (contact != null && contact.getPhone() != null) {
+                    String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
+                    if (!seenPhones.contains(cleanPhone)) {
+                        seenPhones.add(cleanPhone);
+                        contact.setCloud(true);
+                        cloudContacts.add(contact);
                     }
+                }
+            }
 
-                    // Sort cloud contacts alphabetically by name
-                    Collections.sort(cloudContacts, (c1, c2) -> {
-                        String n1 = c1.getName() != null ? c1.getName() : "";
-                        String n2 = c2.getName() != null ? c2.getName() : "";
-                        return n1.compareToIgnoreCase(n2);
-                    });
+            // Sort cloud contacts alphabetically by name
+            Collections.sort(cloudContacts, (c1, c2) -> {
+                String n1 = c1.getName() != null ? c1.getName() : "";
+                String n2 = c2.getName() != null ? c2.getName() : "";
+                return n1.compareToIgnoreCase(n2);
+            });
 
-                    if (cloudContacts.isEmpty()) {
-                        Toast.makeText(this, "No public cloud contacts found for " + selectedCity + ".", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (cloudContacts.isEmpty()) {
+                Toast.makeText(this, "No public cloud contacts found for " + selectedCity + ".", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    displaySelectionDialog(cloudContacts);
-                })
-                .addOnFailureListener(e -> {
-                    Log.w("FixitBhai", "Shared city cloud query failed: " + e.getMessage() + ". Trying personal cloud backup...");
-                    fetchUserPersonalCloudContacts(currentUser.getUid());
-                });
+            displaySelectionDialog(cloudContacts);
+        })
+        .addOnFailureListener(e -> {
+            Log.w("FixitBhai", "Shared city cloud query failed: " + e.getMessage() + ". Trying personal cloud backup...");
+            fetchUserPersonalCloudContacts(currentUser.getUid());
+        });
     }
 
     private void fetchUserPersonalCloudContacts(String uid) {
