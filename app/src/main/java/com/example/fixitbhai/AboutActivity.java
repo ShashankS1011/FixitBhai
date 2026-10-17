@@ -35,6 +35,11 @@ public class AboutActivity extends AppCompatActivity {
         if (cardFeedback != null) {
             cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
         }
+
+        com.google.android.material.button.MaterialButton btnCheckUpdates = findViewById(R.id.btnCheckUpdates);
+        if (btnCheckUpdates != null) {
+            btnCheckUpdates.setOnClickListener(v -> UpdateChecker.checkForUpdates(this, true, null));
+        }
     }
 
     private void openUrl(String url) {

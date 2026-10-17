@@ -222,6 +222,9 @@ public class MainActivity extends AppCompatActivity {
         // Trigger the Combined Sync Process on app launch
         syncWithCloudAndPhonebook(false);
 
+        // Silent background update check against GitHub Releases API
+        UpdateChecker.checkForUpdates(this, false, null);
+
         if (btnAbout != null) btnAbout.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AboutActivity.class)));
         if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
