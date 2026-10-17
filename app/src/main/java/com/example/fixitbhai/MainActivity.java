@@ -362,7 +362,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showCitySelectionDialog() {
-        final String[] visitedCities = new String[]{"Prayagraj"};
+        List<String> distinctCities = dbHelper.getDistinctCities();
+        List<String> cityList = new ArrayList<>();
+        cityList.add("All Cities");
+        for (String c : distinctCities) {
+            if (!cityList.contains(c)) {
+                cityList.add(c);
+            }
+        }
+        if (!cityList.contains("Prayagraj")) cityList.add("Prayagraj");
+        if (!cityList.contains("Chennai")) cityList.add("Chennai");
+        if (!cityList.contains("Lucknow")) cityList.add("Lucknow");
+        if (!cityList.contains("Delhi")) cityList.add("Delhi");
+        if (!cityList.contains("Mumbai")) cityList.add("Mumbai");
+        if (!cityList.contains("Bengaluru")) cityList.add("Bengaluru");
+
+        final String[] cityArray = cityList.toArray(new String[0]);
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_city_select, null);
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
@@ -370,37 +385,36 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
 
         ListView listView = dialogView.findViewById(R.id.listViewCities);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_single_choice, visitedCities);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_single_choice, cityArray);
         listView.setAdapter(arrayAdapter);
 
-        for (int i = 0; i < visitedCities.length; i++) {
-            if (visitedCities[i].equalsIgnoreCase(selectedCity)) {
+        for (int i = 0; i < cityArray.length; i++) {
+            if (cityArray[i].equalsIgnoreCase(selectedCity)) {
                 listView.setItemChecked(i, true);
                 break;
             }
         }
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            selectedCity = visitedCities[position];
+            selectedCity = cityArray[position];
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
             prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
 
             if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
-            adapter.filterBy("", selectedCity);
+
+            String filterCity = selectedCity.equalsIgnoreCase("All Cities") ? "" : selectedCity;
+            adapter.filterBy("", filterCity);
             checkEmptyState();
 
-            Toast.makeText(MainActivity.this, "Switched city to: " + selectedCity, Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Switched filter to: " + selectedCity, Toast.LENGTH_SHORT).show();
             dialog.dismiss();
-
-            // Re-sync Data for the new city
-            syncWithCloudAndPhonebook(true);
         });
 
         ImageButton btnCityHelp = dialogView.findViewById(R.id.btnCityHelp);
         if (btnCityHelp != null) {
             btnCityHelp.setOnClickListener(v -> new MaterialAlertDialogBuilder(MainActivity.this)
-                    .setTitle("Where is my city?")
-                    .setMessage("City not listed? Our developer hasn't traveled there yet!\n\nFixitBhai's contacts aren't scraped from Google—they are 100% hand-picked and verified on the streets. Give our creator a minute to save up for the next visit!")
+                    .setTitle("City Selection")
+                    .setMessage("FixitBhai dynamically organizes your service contacts by city (e.g. Chennai, Prayagraj, Lucknow, Delhi). Select 'All Cities' to view contacts across all cities at once!")
                     .setPositiveButton("Got It", (dialogInterface, i) -> dialogInterface.dismiss())
                     .show());
         }
@@ -634,24 +648,49 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                    if (matchedCategory != null) {
-                        Contact newContact = new Contact(name, formattedNumber, matchedCategory, selectedCity, false);
-                        existingNumbers.add(formattedNumber);
-                        existingNames.add(lowerName);
-                        importedCount++;
+            String[] majorCities = {
+                    "Chennai", "Prayagraj", "Lucknow", "Delhi", "New Delhi", "Mumbai",
+                    "Bengaluru", "Bangalore", "Hyderabad", "Kolkata", "Pune", "Ahmedabad",
+                    "Jaipur", "Kanpur", "Varanasi", "Noida", "Gurgaon", "Gurugram",
+                    "Chandigarh", "Bhopal", "Indore", "Patna", "Ranchi", "Surat",
+                    "Vadodara", "Coimbatore", "Kochi", "Trivandrum", "Visakhapatnam"
+            };
 
-                        dbHelper.addContact(newContact);
-                        if (shouldSyncCloud && currentUserId != null) {
-                            newContact.setCloud(true);
-                            String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
-                            newContact.setUploadedBy(uploaderEmail);
-                            newContact.setUploaderUid(currentUserId);
-                            newContact.setVerified(true);
-                            String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
-                            firestore.collection("cities").document(selectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
-                            firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+            if (matchedCategory != null) {
+                String detectedCity = (selectedCity == null || selectedCity.equalsIgnoreCase("All Cities")) ? "Prayagraj" : selectedCity;
+                for (String knownCity : majorCities) {
+                    String cityRegex = "(?i).*\\b" + Pattern.quote(knownCity) + "\\b.*";
+                    if (lowerName.matches(cityRegex)) {
+                        if (knownCity.equalsIgnoreCase("Bangalore")) {
+                            detectedCity = "Bengaluru";
+                        } else if (knownCity.equalsIgnoreCase("New Delhi")) {
+                            detectedCity = "Delhi";
+                        } else if (knownCity.equalsIgnoreCase("Gurugram")) {
+                            detectedCity = "Gurgaon";
+                        } else {
+                            detectedCity = capitalizeWords(knownCity);
                         }
+                        break;
                     }
+                }
+
+                Contact newContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
+                existingNumbers.add(formattedNumber);
+                existingNames.add(lowerName);
+                importedCount++;
+
+                dbHelper.addContact(newContact);
+                if (shouldSyncCloud && currentUserId != null) {
+                    newContact.setCloud(true);
+                    String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
+                    newContact.setUploadedBy(uploaderEmail);
+                    newContact.setUploaderUid(currentUserId);
+                    newContact.setVerified(true);
+                    String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
+                    firestore.collection("cities").document(detectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                    firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                }
+            }
                 }
                 cursor.close();
             }

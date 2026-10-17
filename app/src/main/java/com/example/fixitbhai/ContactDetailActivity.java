@@ -25,7 +25,7 @@ public class ContactDetailActivity extends AppCompatActivity {
     private TextView tvName, tvPhone, tvCategory, tvWarningBadge;
     private RatingBar ratingBar;
     private CheckBox cbDoNotCall, cbEmergency;
-    private EditText etNotes;
+    private EditText etNotes, etCity;
     private Button btnShareText, btnShareQR, btnSave, btnDelete;
 
     private String name = "";
@@ -70,6 +70,7 @@ public class ContactDetailActivity extends AppCompatActivity {
         cbDoNotCall = findViewById(R.id.cbDoNotCall);
         cbEmergency = findViewById(R.id.cbEmergency);
         etNotes = findViewById(R.id.etNotes);
+        etCity = findViewById(R.id.etCity);
         btnShareText = findViewById(R.id.btnShareText);
         btnShareQR = findViewById(R.id.btnShareQR);
         btnSave = findViewById(R.id.btnSave);
@@ -89,12 +90,13 @@ public class ContactDetailActivity extends AppCompatActivity {
                 name = contact.getName() != null ? contact.getName() : "Unknown";
                 phone = contact.getPhone() != null ? contact.getPhone() : "N/A";
                 category = contact.getCategory() != null ? contact.getCategory() : "General";
-                city = contact.getCity() != null ? contact.getCity() : "Lucknow";
+                city = contact.getCity() != null ? contact.getCity() : "Prayagraj";
                 isCloud = contact.isCloud();
 
                 if (tvName != null) tvName.setText(name);
                 if (tvPhone != null) tvPhone.setText(phone);
                 if (tvCategory != null) tvCategory.setText(category + " • " + city);
+                if (etCity != null) etCity.setText(city);
 
                 if (ratingBar != null) ratingBar.setRating(contact.getRating());
                 if (etNotes != null) etNotes.setText(contact.getNotes());
@@ -131,9 +133,12 @@ public class ContactDetailActivity extends AppCompatActivity {
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
         boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
+        if (etCity != null && !etCity.getText().toString().trim().isEmpty()) {
+            city = etCity.getText().toString().trim();
+        }
 
         // 1. Update SQLite Local Storage
-        dbHelper.updateContactDetails(phone, rating, notes, isDoNotCall, isEmergency, "");
+        dbHelper.updateContactCityAndDetails(phone, city, rating, notes, isDoNotCall, isEmergency, "");
 
         // 2. Sync to Firebase Cloud Firestore
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();

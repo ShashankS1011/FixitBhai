@@ -99,8 +99,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void updateContactDetails(String phone, float rating, String notes, boolean doNotCall, boolean isEmergency, String reviewTags) {
+        updateContactCityAndDetails(phone, null, rating, notes, doNotCall, isEmergency, reviewTags);
+    }
+
+    public void updateContactCityAndDetails(String phone, String city, float rating, String notes, boolean doNotCall, boolean isEmergency, String reviewTags) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
+        if (city != null && !city.trim().isEmpty()) {
+            values.put(KEY_CITY, city.trim());
+        }
         values.put(KEY_RATING, rating);
         values.put(KEY_NOTES, notes);
         values.put(KEY_DO_NOT_CALL, doNotCall ? 1 : 0);
@@ -109,6 +116,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         db.update(TABLE_CONTACTS, values, KEY_PHONE + "=?", new String[]{phone});
         db.close();
+    }
+
+    public List<String> getDistinctCities() {
+        List<String> cities = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT DISTINCT " + KEY_CITY + " FROM " + TABLE_CONTACTS + " WHERE " + KEY_CITY + " IS NOT NULL AND TRIM(" + KEY_CITY + ") != '' ORDER BY " + KEY_CITY + " ASC", null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                cities.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return cities;
     }
 
     public List<Contact> getAllContacts() {
