@@ -60,6 +60,11 @@ public class ContactTest {
         assertEquals(0.0f, contact.getRating(), 0.001f);
         assertFalse(contact.isDoNotCall());
         assertFalse(contact.isCloud());
+        assertFalse(contact.isEmergency());
+        assertFalse(contact.isVerified());
+        assertEquals("", contact.getUploadedBy());
+        assertEquals("", contact.getUploaderUid());
+        assertEquals("", contact.getReviewTags());
     }
 
     @Test
@@ -74,6 +79,11 @@ public class ContactTest {
         contact.setNotes("Expert wiring");
         contact.setDoNotCall(true);
         contact.setCloud(true);
+        contact.setUploadedBy("admin@fixitbhai.com");
+        contact.setUploaderUid("uid12345");
+        contact.setVerified(true);
+        contact.setEmergency(true);
+        contact.setReviewTags("Punctual, Fair Rates");
 
         assertEquals("1", contact.getId());
         assertEquals("Suresh Electrician", contact.getName());
@@ -84,6 +94,11 @@ public class ContactTest {
         assertEquals("Expert wiring", contact.getNotes());
         assertTrue(contact.isDoNotCall());
         assertTrue(contact.isCloud());
+        assertEquals("admin@fixitbhai.com", contact.getUploadedBy());
+        assertEquals("uid12345", contact.getUploaderUid());
+        assertTrue(contact.isVerified());
+        assertTrue(contact.isEmergency());
+        assertEquals("Punctual, Fair Rates", contact.getReviewTags());
     }
 
     @Test
@@ -92,6 +107,11 @@ public class ContactTest {
         contact.setRating(4.5f);
         contact.setNotes("Good service");
         contact.setDoNotCall(false);
+        contact.setUploadedBy("user@example.com");
+        contact.setUploaderUid("uid_abc");
+        contact.setVerified(true);
+        contact.setEmergency(true);
+        contact.setReviewTags("Quick Service");
 
         Map<String, Object> map = contact.toMap();
         assertNotNull(map);
@@ -103,5 +123,10 @@ public class ContactTest {
         assertEquals("Good service", map.get("notes"));
         assertEquals(Boolean.FALSE, map.get("doNotCall"));
         assertEquals(Boolean.TRUE, map.get("isCloud"));
+        assertEquals("user@example.com", map.get("uploadedBy"));
+        assertEquals("uid_abc", map.get("uploaderUid"));
+        assertEquals(Boolean.TRUE, map.get("isVerified"));
+        assertEquals(Boolean.TRUE, map.get("isEmergency"));
+        assertEquals("Quick Service", map.get("reviewTags"));
     }
 }
