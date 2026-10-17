@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "150320496415",
+    "firebase_url": "https://fixit-bhai-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "fixit-bhai",
     "storage_bucket": "fixit-bhai.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.example.fixitbhai"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "150320496415-ifs05jb3pq25um58mra8gcocfkr28ko8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fixitbhai",
+            "certificate_hash": "bddcf5c6a523194e02581a655689000c9945b486"
+          }
+        },
+        {
+          "client_id": "150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB5MXtRBRaPMc-2pbgo4KGEHzwKYvtbOtU"
@@ -20,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
