@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -75,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerViewContacts;
     private ProgressBar progressBar;
     private LinearLayout emptyStateLayout;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +91,13 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewContacts = findViewById(R.id.recyclerViewContacts);
         progressBar = findViewById(R.id.progressBar);
         emptyStateLayout = findViewById(R.id.emptyStateLayout);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(ContextCompat.getColor(this, R.color.accent_blue));
+            swipeRefreshLayout.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(this, R.color.surface_dark));
+            swipeRefreshLayout.setOnRefreshListener(() -> syncWithCloudAndPhonebook(true));
+        }
 
         ImageButton btnAbout = findViewById(R.id.btnAbout);
         ImageButton btnLogout = findViewById(R.id.btnLogout);
@@ -666,6 +675,7 @@ public class MainActivity extends AppCompatActivity {
 
             handler.post(() -> {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
 
                 if (finalImportedCount > 0) {
                     contactList.clear();
