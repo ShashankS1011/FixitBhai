@@ -2,40 +2,33 @@ package com.example.fixitbhai;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.InputFilter;
-import android.view.View;
+import android.text.TextUtils;
+import android.util.Patterns;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.PhoneAuthCredential;
-import com.google.firebase.auth.PhoneAuthOptions;
-import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private TextInputEditText etPhone, etOtp;
-    private TextInputLayout tilOtp;
-    private MaterialButton btnSendOtp, btnResendCode;
+    private TextInputEditText etEmail, etPassword;
+    private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn, btnGuestMode;
+    private TextView tvLoginTitle, tvLoginSubtitle;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore firestore;
-    private String verificationId;
-    private PhoneAuthProvider.ForceResendingToken resendToken;
-    private boolean isOtpSent = false;
+
+    private boolean isRegistrationMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,24 +38,22 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        etPhone = findViewById(R.id.etPhone);
-        etOtp = findViewById(R.id.etOtp);
-        tilOtp = findViewById(R.id.tilOtp);
-        btnSendOtp = findViewById(R.id.btnSendOtp);
-        btnResendCode = findViewById(R.id.btnResendCode);
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+        btnAuthAction = findViewById(R.id.btnAuthAction);
+        btnToggleMode = findViewById(R.id.btnToggleMode);
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        btnGuestMode = findViewById(R.id.btnGuestMode);
+        tvLoginTitle = findViewById(R.id.tvLoginTitle);
+        tvLoginSubtitle = findViewById(R.id.tvLoginSubtitle);
 
-        // ALLOW PHONE NUMBER INPUT UP TO 16 CHARS FOR COUNTRY CODE / SPACES
-        etPhone.setFilters(new InputFilter[]{new InputFilter.LengthFilter(16)});
+        btnAuthAction.setOnClickListener(v -> performEmailAuth());
 
-        btnSendOtp.setOnClickListener(v -> {
-            if (!isOtpSent) {
-                sendOTP(null);
-            } else {
-                verifyOTP();
-            }
-        });
+        btnToggleMode.setOnClickListener(v -> toggleAuthMode());
 
-        btnResendCode.setOnClickListener(v -> sendOTP(resendToken));
+        btnGuestMode.setOnClickListener(v -> performGuestSignIn());
+
+        btnGoogleSignIn.setOnClickListener(v -> performGuestSignIn());
     }
 
     @Override
@@ -74,97 +65,75 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void sendOTP(PhoneAuthProvider.ForceResendingToken token) {
-        String digits = Objects.requireNonNull(etPhone.getText()).toString().trim().replaceAll("[^0-9]", "");
-
-        String rawPhone = digits;
-        if (digits.length() == 12 && digits.startsWith("91")) {
-            rawPhone = digits.substring(2);
-        } else if (digits.length() == 11 && digits.startsWith("0")) {
-            rawPhone = digits.substring(1);
-        } else if (digits.length() > 10) {
-            rawPhone = digits.substring(digits.length() - 10);
+    private void toggleAuthMode() {
+        isRegistrationMode = !isRegistrationMode;
+        if (isRegistrationMode) {
+            tvLoginTitle.setText("Create Account");
+            tvLoginSubtitle.setText("Register with your email and password");
+            btnAuthAction.setText("Register Account");
+            btnToggleMode.setText("Already have an account? Sign In");
+        } else {
+            tvLoginTitle.setText("Welcome to FixitBhai");
+            tvLoginSubtitle.setText("Sign in with your email or Google account");
+            btnAuthAction.setText("Sign In");
+            btnToggleMode.setText("Don't have an account? Register");
         }
+    }
 
-        if (rawPhone.length() != 10) {
-            etPhone.setError("Enter a valid 10-digit phone number");
+    private void performEmailAuth() {
+        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
+        String password = Objects.requireNonNull(etPassword.getText()).toString().trim();
+
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Enter a valid email address");
             return;
         }
 
-        // Pass E.164 formatted number to Firebase Auth
-        String formattedPhone = "+91" + rawPhone;
-
-        PhoneAuthOptions.Builder builder = PhoneAuthOptions.newBuilder(mAuth)
-                .setPhoneNumber(formattedPhone)
-                .setTimeout(60L, TimeUnit.SECONDS)
-                .setActivity(this)
-                .setCallbacks(mCallbacks);
-
-        if (token != null) {
-            builder.setForceResendingToken(token);
-        }
-
-        PhoneAuthProvider.verifyPhoneNumber(builder.build());
-        Toast.makeText(this, "Sending OTP to " + formattedPhone + "...", Toast.LENGTH_SHORT).show();
-    }
-
-    private final PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks =
-            new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
-                @Override
-                public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
-                    signInWithCredential(credential);
-                }
-
-                @Override
-                public void onVerificationFailed(@NonNull FirebaseException e) {
-                    String msg = e.getMessage() != null ? e.getMessage() : "";
-                    if (msg.toLowerCase().contains("billing") || msg.toLowerCase().contains("quota") || msg.toLowerCase().contains("disabled")) {
-                        Toast.makeText(LoginActivity.this,
-                                "Firebase SMS requires Billing (Blaze Plan) or Test Numbers in Firebase Console.",
-                                Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Authentication failed: " + msg, Toast.LENGTH_LONG).show();
-                    }
-                }
-
-                @Override
-                public void onCodeSent(@NonNull String s, @NonNull PhoneAuthProvider.ForceResendingToken token) {
-                    super.onCodeSent(s, token);
-                    verificationId = s;
-                    resendToken = token;
-                    isOtpSent = true;
-
-                    etPhone.setEnabled(false);
-                    tilOtp.setVisibility(View.VISIBLE);
-                    btnResendCode.setVisibility(View.VISIBLE);
-                    btnSendOtp.setText("Verify & Sign In");
-
-                    Toast.makeText(LoginActivity.this, "OTP Sent!", Toast.LENGTH_SHORT).show();
-                }
-            };
-
-    private void verifyOTP() {
-        String code = Objects.requireNonNull(etOtp.getText()).toString().trim();
-        if (code.isEmpty() || code.length() < 6) {
-            etOtp.setError("Enter valid 6-digit OTP");
+        if (TextUtils.isEmpty(password) || password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
             return;
         }
 
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-        signInWithCredential(credential);
+        if (isRegistrationMode) {
+            Toast.makeText(this, "Creating account...", Toast.LENGTH_SHORT).show();
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, task -> {
+                        if (task.isSuccessful()) {
+                            syncLocalContactsToCloud();
+                            Toast.makeText(LoginActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
+                            navigateToMain();
+                        } else {
+                            String err = task.getException() != null ? task.getException().getMessage() : "Registration failed";
+                            Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                        }
+                    });
+        } else {
+            Toast.makeText(this, "Signing in...", Toast.LENGTH_SHORT).show();
+            mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, task -> {
+                        if (task.isSuccessful()) {
+                            syncLocalContactsToCloud();
+                            Toast.makeText(LoginActivity.this, "Sign In Successful!", Toast.LENGTH_SHORT).show();
+                            navigateToMain();
+                        } else {
+                            String err = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
+                            Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                        }
+                    });
+        }
     }
 
-    private void signInWithCredential(PhoneAuthCredential credential) {
-        mAuth.signInWithCredential(credential)
+    private void performGuestSignIn() {
+        Toast.makeText(this, "Signing in...", Toast.LENGTH_SHORT).show();
+        mAuth.signInAnonymously()
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         syncLocalContactsToCloud();
-                        Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Signed in successfully!", Toast.LENGTH_SHORT).show();
                         navigateToMain();
                     } else {
-                        String errMsg = task.getException() != null ? task.getException().getMessage() : "Verification failed";
-                        Toast.makeText(LoginActivity.this, "Verification failed: " + errMsg, Toast.LENGTH_LONG).show();
+                        String err = task.getException() != null ? task.getException().getMessage() : "Sign-in failed";
+                        Toast.makeText(LoginActivity.this, "Sign In Error: " + err, Toast.LENGTH_LONG).show();
                     }
                 });
     }
