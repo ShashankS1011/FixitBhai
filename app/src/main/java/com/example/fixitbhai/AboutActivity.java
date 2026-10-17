@@ -12,8 +12,7 @@ import com.google.android.material.card.MaterialCardView;
 public class AboutActivity extends AppCompatActivity {
 
     private static final String GITHUB_REPO_URL = "https://github.com/ShashankS1011/FixitBhai";
-    private static final String CONTRIBUTOR_URL = "https://github.com/ROGU3D3viL";
-    private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues";
+    private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues/new";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,9 +31,9 @@ public class AboutActivity extends AppCompatActivity {
             cardDeveloper.setOnClickListener(v -> openUrl(GITHUB_REPO_URL));
         }
 
-        MaterialCardView cardContributor = findViewById(R.id.cardContributor);
-        if (cardContributor != null) {
-            cardContributor.setOnClickListener(v -> openUrl(CONTRIBUTOR_URL));
+        MaterialCardView cardFeedback = findViewById(R.id.cardFeedback);
+        if (cardFeedback != null) {
+            cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
         }
     }
 

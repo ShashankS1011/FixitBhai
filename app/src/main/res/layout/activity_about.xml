@@ -42,7 +42,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Version 2.4.0"
+            android:text="Version 2.6.0"
             android:textColor="@color/accent_blue"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -222,9 +222,9 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Contributor Information (Clickable) -->
+        <!-- Submit Feedback & Report Issue Card -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardContributor"
+            android:id="@+id/cardFeedback"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -247,7 +247,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Contributor &amp; Bug Reporting"
+                    android:text="Submit Feedback &amp; Report Issue"
                     android:textColor="@color/text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -255,19 +255,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Divyanshu Singh (@ROGU3D3viL)"
+                    android:layout_marginTop="4dp"
+                    android:text="Tap to submit feedback, report a bug, or request a feature in the repository ➔"
                     android:textColor="@color/accent_blue"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Reported phone authentication &amp; cross-user cloud sync issues ➔"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
