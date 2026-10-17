@@ -118,7 +118,14 @@ public class LoginActivity extends AppCompatActivity {
 
                 @Override
                 public void onVerificationFailed(@NonNull FirebaseException e) {
-                    Toast.makeText(LoginActivity.this, "Authentication failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    String msg = e.getMessage() != null ? e.getMessage() : "";
+                    if (msg.toLowerCase().contains("billing") || msg.toLowerCase().contains("quota") || msg.toLowerCase().contains("disabled")) {
+                        Toast.makeText(LoginActivity.this,
+                                "Firebase SMS requires Billing (Blaze Plan) or Test Numbers in Firebase Console.",
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Authentication failed: " + msg, Toast.LENGTH_LONG).show();
+                    }
                 }
 
                 @Override
@@ -156,7 +163,8 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
                         navigateToMain();
                     } else {
-                        Toast.makeText(LoginActivity.this, "Verification failed", Toast.LENGTH_SHORT).show();
+                        String errMsg = task.getException() != null ? task.getException().getMessage() : "Verification failed";
+                        Toast.makeText(LoginActivity.this, "Verification failed: " + errMsg, Toast.LENGTH_LONG).show();
                     }
                 });
     }
