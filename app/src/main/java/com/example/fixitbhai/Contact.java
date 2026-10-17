@@ -28,6 +28,10 @@ public class Contact implements Serializable {
     private String uploaderUid;
     private boolean isVerified;
 
+    // 24/7 Emergency and Community Review Tags
+    private boolean isEmergency;
+    private String reviewTags;
+
     // Default No-Argument Constructor (Required for Firestore doc.toObject(Contact.class))
     public Contact() {
         this.city = "Prayagraj";
@@ -39,6 +43,8 @@ public class Contact implements Serializable {
         this.uploadedBy = "";
         this.uploaderUid = "";
         this.isVerified = false;
+        this.isEmergency = false;
+        this.reviewTags = "";
     }
 
     public Contact(String name, String phone, String category, String city, boolean isCloud) {
@@ -138,6 +144,18 @@ public class Contact implements Serializable {
     @PropertyName("isVerified")
     public void setVerified(boolean verified) { isVerified = verified; }
 
+    @PropertyName("isEmergency")
+    public boolean isEmergency() { return isEmergency; }
+
+    @PropertyName("isEmergency")
+    public void setEmergency(boolean emergency) { isEmergency = emergency; }
+
+    @PropertyName("reviewTags")
+    public String getReviewTags() { return reviewTags != null ? reviewTags : ""; }
+
+    @PropertyName("reviewTags")
+    public void setReviewTags(String reviewTags) { this.reviewTags = reviewTags; }
+
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("name", name);
@@ -151,6 +169,8 @@ public class Contact implements Serializable {
         map.put("uploadedBy", getUploadedBy());
         map.put("uploaderUid", getUploaderUid());
         map.put("isVerified", isVerified());
+        map.put("isEmergency", isEmergency());
+        map.put("reviewTags", getReviewTags());
         return map;
     }
 }

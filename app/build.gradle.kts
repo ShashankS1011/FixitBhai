@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.fixitbhai"
         minSdk = 24
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.5.0"
+        versionCode = 6
+        versionName = "1.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,6 +49,7 @@ dependencies {
     // Firebase dependencies
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation("com.google.firebase:firebase-messaging")
 
     // Jetpack Navigation
     implementation(libs.navigation.fragment)

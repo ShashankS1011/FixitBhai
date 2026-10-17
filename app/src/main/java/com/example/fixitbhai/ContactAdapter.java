@@ -78,6 +78,16 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             }
         }
 
+        if (holder.tvEmergencyBadge != null) {
+            if (contact.isEmergency()) {
+                holder.tvEmergencyBadge.setText("24/7");
+                holder.tvEmergencyBadge.setBackgroundColor(Color.parseColor("#DC2626")); // High contrast Red
+                holder.tvEmergencyBadge.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvEmergencyBadge.setVisibility(View.GONE);
+            }
+        }
+
         // --- NEW: Cloud vs Local UI Styling ---
         if (contact.isCloud()) {
             holder.tvSourceBadge.setText("Cloud");
@@ -222,10 +232,12 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             for (Contact item : contactListFull) {
                 boolean matchesCategory = categoryPattern.isEmpty()
                         || categoryPattern.equalsIgnoreCase("all")
+                        || (categoryPattern.contains("emergency") || categoryPattern.contains("24/7") ? item.isEmergency() : false)
                         || (item.getCategory() != null && item.getCategory().toLowerCase().contains(categoryPattern))
                         || (item.getName() != null && item.getName().toLowerCase().contains(categoryPattern))
                         || (item.getPhone() != null && item.getPhone().replaceAll("[^0-9]", "").contains(categoryPattern))
-                        || (item.getNotes() != null && item.getNotes().toLowerCase().contains(categoryPattern));
+                        || (item.getNotes() != null && item.getNotes().toLowerCase().contains(categoryPattern))
+                        || (item.getReviewTags() != null && item.getReviewTags().toLowerCase().contains(categoryPattern));
 
                 boolean matchesCity = currentCityFilter.isEmpty()
                         || (item.getCity() != null && item.getCity().equalsIgnoreCase(currentCityFilter));
@@ -269,7 +281,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     }
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity, tvUploader;
+        TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity, tvUploader, tvEmergencyBadge;
         ImageButton btnCall, btnShare, btnWhatsApp;
         MaterialCardView cardContact;
 
@@ -284,6 +296,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             tvAvatar = itemView.findViewById(R.id.tvAvatar);
             tvCategoryCity = itemView.findViewById(R.id.tvCategoryCity);
             tvUploader = itemView.findViewById(R.id.tvUploader);
+            tvEmergencyBadge = itemView.findViewById(R.id.tvEmergencyBadge);
 
             // Initialize the new views here
             tvSourceBadge = itemView.findViewById(R.id.tvSourceBadge);

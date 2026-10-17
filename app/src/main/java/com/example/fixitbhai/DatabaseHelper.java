@@ -12,8 +12,8 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "FixitBhai.db";
-    // INCREASED VERSION TO 4 for the new is_cloud column
-    private static final int DATABASE_VERSION = 4;
+    // INCREASED VERSION TO 5 for emergency and review tags
+    private static final int DATABASE_VERSION = 5;
 
     private static final String TABLE_CONTACTS = "contacts";
     private static final String KEY_ID = "id";
@@ -24,8 +24,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_RATING = "rating";
     private static final String KEY_NOTES = "notes";
     private static final String KEY_DO_NOT_CALL = "do_not_call";
-    // NEW COLUMN
     private static final String KEY_IS_CLOUD = "is_cloud";
+    private static final String KEY_IS_EMERGENCY = "is_emergency";
+    private static final String KEY_REVIEW_TAGS = "review_tags";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -42,7 +43,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_RATING + " REAL DEFAULT 0.0,"
                 + KEY_NOTES + " TEXT,"
                 + KEY_DO_NOT_CALL + " INTEGER DEFAULT 0,"
-                + KEY_IS_CLOUD + " INTEGER DEFAULT 0" + ")"; // Added is_cloud
+                + KEY_IS_CLOUD + " INTEGER DEFAULT 0,"
+                + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0,"
+                + KEY_REVIEW_TAGS + " TEXT DEFAULT ''" + ")";
         db.execSQL(CREATE_CONTACTS_TABLE);
     }
 
@@ -57,8 +60,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_DO_NOT_CALL + " INTEGER DEFAULT 0");
         }
         if (oldVersion < 4) {
-            // Upgrade for version 4 to add is_cloud
             db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_CLOUD + " INTEGER DEFAULT 0");
+        }
+        if (oldVersion < 5) {
+            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_REVIEW_TAGS + " TEXT DEFAULT ''");
         }
     }
 
@@ -74,6 +80,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_DO_NOT_CALL, contact.isDoNotCall() ? 1 : 0);
         // Save the isCloud state
         values.put(KEY_IS_CLOUD, contact.isCloud() ? 1 : 0);
+        values.put(KEY_IS_EMERGENCY, contact.isEmergency() ? 1 : 0);
+        values.put(KEY_REVIEW_TAGS, contact.getReviewTags());
 
         long id = db.insertWithOnConflict(TABLE_CONTACTS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
 
@@ -87,11 +95,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void updateContactDetails(String phone, float rating, String notes, boolean doNotCall) {
+        updateContactDetails(phone, rating, notes, doNotCall, false, "");
+    }
+
+    public void updateContactDetails(String phone, float rating, String notes, boolean doNotCall, boolean isEmergency, String reviewTags) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(KEY_RATING, rating);
         values.put(KEY_NOTES, notes);
         values.put(KEY_DO_NOT_CALL, doNotCall ? 1 : 0);
+        values.put(KEY_IS_EMERGENCY, isEmergency ? 1 : 0);
+        values.put(KEY_REVIEW_TAGS, reviewTags != null ? reviewTags : "");
 
         db.update(TABLE_CONTACTS, values, KEY_PHONE + "=?", new String[]{phone});
         db.close();
@@ -169,6 +183,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
         boolean isCloud = (isCloudIdx != -1) && (cursor.getInt(isCloudIdx) == 1);
 
+        int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
+        boolean isEmergency = (emgIdx != -1) && (cursor.getInt(emgIdx) == 1);
+
+        int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
+        String reviewTags = (revIdx != -1 && !cursor.isNull(revIdx)) ? cursor.getString(revIdx) : "";
+
         // FIXED: Using the updated 5-parameter constructor
         Contact contact = new Contact(name, phone, category, city, isCloud);
 
@@ -179,6 +199,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contact.setRating(rating);
         contact.setNotes(notes);
         contact.setDoNotCall(dnc);
+        contact.setEmergency(isEmergency);
+        contact.setReviewTags(reviewTags);
 
         return contact;
     }

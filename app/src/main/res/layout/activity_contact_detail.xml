@@ -114,6 +114,17 @@
                     android:text="Mark as Do Not Call Again (Blacklist)"
                     android:textColor="@color/accent_red"
                     android:textSize="13sp" />
+
+                <CheckBox
+                    android:id="@+id/cbEmergency"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:buttonTint="#DC2626"
+                    android:text="24/7 Emergency Service Available"
+                    android:textColor="#EF4444"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

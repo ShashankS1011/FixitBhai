@@ -24,7 +24,7 @@ public class ContactDetailActivity extends AppCompatActivity {
 
     private TextView tvName, tvPhone, tvCategory, tvWarningBadge;
     private RatingBar ratingBar;
-    private CheckBox cbDoNotCall;
+    private CheckBox cbDoNotCall, cbEmergency;
     private EditText etNotes;
     private Button btnShareText, btnShareQR, btnSave, btnDelete;
 
@@ -68,11 +68,12 @@ public class ContactDetailActivity extends AppCompatActivity {
         tvWarningBadge = findViewById(R.id.tvWarningBadge);
         ratingBar = findViewById(R.id.ratingBar);
         cbDoNotCall = findViewById(R.id.cbDoNotCall);
+        cbEmergency = findViewById(R.id.cbEmergency);
         etNotes = findViewById(R.id.etNotes);
         btnShareText = findViewById(R.id.btnShareText);
         btnShareQR = findViewById(R.id.btnShareQR);
         btnSave = findViewById(R.id.btnSave);
-        btnDelete = findViewById(R.id.btnDelete); // FIXED: Added this so delete button works
+        btnDelete = findViewById(R.id.btnDelete);
     }
 
     private void extractIntentData() {
@@ -89,7 +90,7 @@ public class ContactDetailActivity extends AppCompatActivity {
                 phone = contact.getPhone() != null ? contact.getPhone() : "N/A";
                 category = contact.getCategory() != null ? contact.getCategory() : "General";
                 city = contact.getCity() != null ? contact.getCity() : "Lucknow";
-                isCloud = contact.isCloud(); // Extract cloud status
+                isCloud = contact.isCloud();
 
                 if (tvName != null) tvName.setText(name);
                 if (tvPhone != null) tvPhone.setText(phone);
@@ -102,6 +103,9 @@ public class ContactDetailActivity extends AppCompatActivity {
                     if (tvWarningBadge != null) {
                         tvWarningBadge.setVisibility(contact.isDoNotCall() ? View.VISIBLE : View.GONE);
                     }
+                }
+                if (cbEmergency != null) {
+                    cbEmergency.setChecked(contact.isEmergency());
                 }
             }
         }
@@ -126,9 +130,10 @@ public class ContactDetailActivity extends AppCompatActivity {
         float rating = ratingBar != null ? ratingBar.getRating() : 0.0f;
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
+        boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
 
         // 1. Update SQLite Local Storage
-        dbHelper.updateContactDetails(phone, rating, notes, isDoNotCall);
+        dbHelper.updateContactDetails(phone, rating, notes, isDoNotCall, isEmergency, "");
 
         // 2. Sync to Firebase Cloud Firestore
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -137,6 +142,7 @@ public class ContactDetailActivity extends AppCompatActivity {
             updatedContact.setRating(rating);
             updatedContact.setNotes(notes);
             updatedContact.setDoNotCall(isDoNotCall);
+            updatedContact.setEmergency(isEmergency);
             String uploaderEmail = user.getEmail() != null && !user.getEmail().isEmpty() ? user.getEmail() : "Verified Member";
             updatedContact.setUploadedBy(uploaderEmail);
             updatedContact.setUploaderUid(user.getUid());

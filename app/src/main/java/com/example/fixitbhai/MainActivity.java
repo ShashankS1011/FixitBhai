@@ -482,6 +482,13 @@ public class MainActivity extends AppCompatActivity {
         allChip.setOnClickListener(v -> adapter.filterBy("", selectedCity));
         chipGroupCategories.addView(allChip);
 
+        Chip emergencyChip = new Chip(this);
+        emergencyChip.setText("24/7 Emergency");
+        emergencyChip.setCheckable(true);
+        emergencyChip.setChipIconResource(R.drawable.ic_info);
+        emergencyChip.setOnClickListener(v -> adapter.filterBy("24/7 Emergency", selectedCity));
+        chipGroupCategories.addView(emergencyChip);
+
         Set<String> categories = new LinkedHashSet<>();
         for (Contact contact : contactList) {
             if (contact.getCategory() != null && !contact.getCategory().trim().isEmpty()) {
