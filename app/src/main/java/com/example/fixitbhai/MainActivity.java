@@ -6,6 +6,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -135,11 +140,47 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // --- SWIPE TO DELETE LOGIC ---
+        // --- SWIPE TO DELETE LOGIC WITH VISUAL RED BACKGROUND & TRASH ICON ---
         ItemTouchHelper.SimpleCallback swipeToDeleteCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                View itemView = viewHolder.itemView;
+                if (dX != 0) {
+                    Paint p = new Paint();
+                    p.setColor(Color.parseColor("#DC2626"));
+
+                    RectF background;
+                    if (dX > 0) {
+                        background = new RectF((float) itemView.getLeft(), (float) itemView.getTop() + 12, dX + 24, (float) itemView.getBottom() - 12);
+                    } else {
+                        background = new RectF((float) itemView.getRight() + dX - 24, (float) itemView.getTop() + 12, (float) itemView.getRight(), (float) itemView.getBottom() - 12);
+                    }
+                    c.drawRoundRect(background, 32, 32, p);
+
+                    Drawable icon = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_delete);
+                    if (icon != null) {
+                        int iconMargin = (itemView.getHeight() - icon.getIntrinsicHeight()) / 2;
+                        int iconTop = itemView.getTop() + iconMargin;
+                        int iconBottom = iconTop + icon.getIntrinsicHeight();
+
+                        if (dX > 0) {
+                            int iconLeft = itemView.getLeft() + iconMargin;
+                            int iconRight = iconLeft + icon.getIntrinsicWidth();
+                            icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        } else {
+                            int iconRight = itemView.getRight() - iconMargin;
+                            int iconLeft = iconRight - icon.getIntrinsicWidth();
+                            icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        }
+                        icon.draw(c);
+                    }
+                }
             }
 
             @Override
@@ -163,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                             .collection("contacts").document(deletedContact.getPhone().replaceAll("[^0-9+]", "")).delete();
                 }
 
-                Toast.makeText(MainActivity.this, deletedContact.getName() + " removed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, deletedContact.getName() + " removed from your device", Toast.LENGTH_SHORT).show();
                 checkEmptyState();
                 refreshCategoryChips();
             }

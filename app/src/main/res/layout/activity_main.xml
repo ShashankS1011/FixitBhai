@@ -66,34 +66,35 @@
                 <!-- Cloud Picker Button -->
                 <ImageButton
                     android:id="@+id/btnCloudSync"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Cloud Import"
-                    android:padding="8dp"
+                    android:padding="9dp"
                     android:src="@drawable/ic_cloud_download"
                     app:tint="@color/accent_blue" />
 
                 <!-- Logout Button -->
                 <ImageButton
                     android:id="@+id/btnLogout"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="4dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Logout"
-                    android:padding="8dp"
+                    android:padding="9dp"
                     android:src="@drawable/ic_logout"
                     app:tint="@color/text_secondary" />
 
                 <!-- About Button -->
                 <ImageButton
                     android:id="@+id/btnAbout"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="About Info"
-                    android:padding="8dp"
+                    android:padding="9dp"
                     android:src="@drawable/ic_info"
                     app:tint="@color/text_secondary" />
 

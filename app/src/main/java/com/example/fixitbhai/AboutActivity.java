@@ -36,11 +36,6 @@ public class AboutActivity extends AppCompatActivity {
         if (cardContributor != null) {
             cardContributor.setOnClickListener(v -> openUrl(CONTRIBUTOR_URL));
         }
-
-        MaterialCardView cardFeedback = findViewById(R.id.cardFeedback);
-        if (cardFeedback != null) {
-            cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
-        }
     }
 
     private void openUrl(String url) {
