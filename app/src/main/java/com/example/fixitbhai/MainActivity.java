@@ -532,21 +532,25 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         selectedCity = prefs.getString(KEY_SELECTED_CITY, "Prayagraj");
 
-        List<Contact> dbContacts = dbHelper.getAllContacts();
-        if (!dbContacts.isEmpty()) {
-            contactList.clear();
-            contactList.addAll(dbContacts);
-        } else {
-            String json = prefs.getString(KEY_CONTACT_LIST, null);
-            if (json != null) {
-                Gson gson = new Gson();
-                Type type = new TypeToken<ArrayList<Contact>>() {}.getType();
-                List<Contact> savedList = gson.fromJson(json, type);
-                if (savedList != null) {
-                    contactList.clear();
-                    contactList.addAll(savedList);
+        try {
+            List<Contact> dbContacts = dbHelper.getAllContacts();
+            if (dbContacts != null && !dbContacts.isEmpty()) {
+                contactList.clear();
+                contactList.addAll(dbContacts);
+            } else {
+                String json = prefs.getString(KEY_CONTACT_LIST, null);
+                if (json != null) {
+                    Gson gson = new Gson();
+                    Type type = new TypeToken<ArrayList<Contact>>() {}.getType();
+                    List<Contact> savedList = gson.fromJson(json, type);
+                    if (savedList != null) {
+                        contactList.clear();
+                        contactList.addAll(savedList);
+                    }
                 }
             }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error loading saved state", e);
         }
     }
 
