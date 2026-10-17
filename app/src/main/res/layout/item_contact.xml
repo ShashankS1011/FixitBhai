@@ -73,6 +73,17 @@
                 android:text="+91 98765 43210"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvUploader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#38BDF8"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Right Side: Badge & Quick Action Buttons -->

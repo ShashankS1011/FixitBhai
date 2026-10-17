@@ -99,7 +99,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public List<Contact> getAllContacts() {
         List<Contact> contactList = new ArrayList<>();
-        String selectQuery = "SELECT * FROM " + TABLE_CONTACTS + " ORDER BY " + KEY_NAME + " ASC";
+        String selectQuery = "SELECT * FROM " + TABLE_CONTACTS + " ORDER BY " + KEY_CITY + " ASC, " + KEY_NAME + " ASC";
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
@@ -134,7 +134,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             args.add(city);
         }
 
-        query.append(" ORDER BY ").append(KEY_NAME).append(" ASC");
+        query.append(" ORDER BY ").append(KEY_CITY).append(" ASC, ").append(KEY_NAME).append(" ASC");
         Cursor cursor = db.rawQuery(query.toString(), args.toArray(new String[0]));
 
         if (cursor.moveToFirst()) {

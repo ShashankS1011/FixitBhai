@@ -67,6 +67,17 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             holder.tvAvatar.setText(initial);
         }
 
+        if (holder.tvUploader != null) {
+            String uploader = contact.getUploadedBy();
+            if (contact.isCloud() || (uploader != null && !uploader.isEmpty())) {
+                String uploaderText = (uploader != null && !uploader.isEmpty()) ? "Verified by " + uploader : "Verified Cloud Expert";
+                holder.tvUploader.setText(uploaderText);
+                holder.tvUploader.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvUploader.setVisibility(View.GONE);
+            }
+        }
+
         // --- NEW: Cloud vs Local UI Styling ---
         if (contact.isCloud()) {
             holder.tvSourceBadge.setText("Cloud");
@@ -92,23 +103,43 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             context.startActivity(intent);
         });
 
-        // Long Press -> Upload to Cloud
+        // Long Press -> Upload to Shared Cloud
         holder.itemView.setOnLongClickListener(v -> {
             new MaterialAlertDialogBuilder(context)
-                    .setTitle("Backup to Cloud")
-                    .setMessage("Do you want to manually upload " + contact.getName() + " to your cloud backup?")
-                    .setPositiveButton("Upload", (dialog, which) -> {
-                        String uid = FirebaseAuth.getInstance().getUid();
-                        if (uid != null) {
+                    .setTitle("Publish to Shared Cloud")
+                    .setMessage("Upload " + contact.getName() + " to the public FixitBhai cloud directory so all users in " + contact.getCity() + " can access it?")
+                    .setPositiveButton("Publish", (dialog, which) -> {
+                        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            String uploaderEmail = user.getEmail() != null && !user.getEmail().isEmpty() ? user.getEmail() : (user.getDisplayName() != null && !user.getDisplayName().isEmpty() ? user.getDisplayName() : "Verified Member");
+                            contact.setCloud(true);
+                            contact.setUploadedBy(uploaderEmail);
+                            contact.setUploaderUid(user.getUid());
+                            contact.setVerified(true);
+
+                            String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
+                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+
+                            // 1. Publish to Shared City Cloud Directory for All Users
                             FirebaseFirestore.getInstance()
-                                    .collection("users")
-                                    .document(uid)
+                                    .collection("cities")
+                                    .document(city)
                                     .collection("contacts")
-                                    // Use a clean number for the document ID
-                                    .document(contact.getPhone().replaceAll("[^0-9+]", ""))
+                                    .document(cleanPhone)
                                     .set(contact.toMap())
-                                    .addOnSuccessListener(aVoid -> Toast.makeText(context, contact.getName() + " synced successfully!", Toast.LENGTH_SHORT).show())
-                                    .addOnFailureListener(e -> Toast.makeText(context, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                    .addOnSuccessListener(aVoid -> {
+                                        // 2. Also save to personal backup collection
+                                        FirebaseFirestore.getInstance()
+                                                .collection("users")
+                                                .document(user.getUid())
+                                                .collection("contacts")
+                                                .document(cleanPhone)
+                                                .set(contact.toMap());
+
+                                        Toast.makeText(context, contact.getName() + " published to " + city + " cloud directory!", Toast.LENGTH_SHORT).show();
+                                        notifyItemChanged(position);
+                                    })
+                                    .addOnFailureListener(e -> Toast.makeText(context, "Cloud upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         } else {
                             Toast.makeText(context, "Error: User not logged in.", Toast.LENGTH_SHORT).show();
                         }
@@ -238,7 +269,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     }
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity;
+        TextView tvName, tvPhone, tvSourceBadge, tvAvatar, tvCategoryCity, tvUploader;
         ImageButton btnCall, btnShare, btnWhatsApp;
         MaterialCardView cardContact;
 
@@ -252,6 +283,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
             tvAvatar = itemView.findViewById(R.id.tvAvatar);
             tvCategoryCity = itemView.findViewById(R.id.tvCategoryCity);
+            tvUploader = itemView.findViewById(R.id.tvUploader);
 
             // Initialize the new views here
             tvSourceBadge = itemView.findViewById(R.id.tvSourceBadge);

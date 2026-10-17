@@ -131,19 +131,20 @@ public class ContactDetailActivity extends AppCompatActivity {
         dbHelper.updateContactDetails(phone, rating, notes, isDoNotCall);
 
         // 2. Sync to Firebase Cloud Firestore
-        String userId = FirebaseAuth.getInstance().getUid();
-        if (userId != null) {
-            // FIXED: Using the 5-parameter constructor to match your updated Contact class
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
             Contact updatedContact = new Contact(name, phone, category, city, isCloud);
             updatedContact.setRating(rating);
             updatedContact.setNotes(notes);
             updatedContact.setDoNotCall(isDoNotCall);
+            String uploaderEmail = user.getEmail() != null && !user.getEmail().isEmpty() ? user.getEmail() : "Verified Member";
+            updatedContact.setUploadedBy(uploaderEmail);
+            updatedContact.setUploaderUid(user.getUid());
+            updatedContact.setVerified(true);
 
-            firestore.collection("users")
-                    .document(userId)
-                    .collection("contacts")
-                    .document(phone)
-                    .set(updatedContact.toMap());
+            String cleanPhone = phone.replaceAll("[^0-9+]", "");
+            firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
+            firestore.collection("users").document(user.getUid()).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
         }
 
         Toast.makeText(this, "Contact details updated successfully", Toast.LENGTH_SHORT).show();
@@ -166,11 +167,9 @@ public class ContactDetailActivity extends AppCompatActivity {
         // 2. Delete from Firestore if authenticated
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId != null) {
-            firestore.collection("users")
-                    .document(userId)
-                    .collection("contacts")
-                    .document(phone)
-                    .delete();
+            String cleanPhone = phone.replaceAll("[^0-9+]", "");
+            firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).delete();
+            firestore.collection("users").document(userId).collection("contacts").document(cleanPhone).delete();
         }
 
         Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show();

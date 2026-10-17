@@ -23,6 +23,11 @@ public class Contact implements Serializable {
     // Differentiate between Phonebook and Firebase contacts
     private boolean isCloud;
 
+    // Uploader and verification tracking
+    private String uploadedBy;
+    private String uploaderUid;
+    private boolean isVerified;
+
     // Default No-Argument Constructor (Required for Firestore doc.toObject(Contact.class))
     public Contact() {
         this.city = "Prayagraj";
@@ -31,6 +36,9 @@ public class Contact implements Serializable {
         this.doNotCall = false;
         this.isSelected = false;
         this.isCloud = false;
+        this.uploadedBy = "";
+        this.uploaderUid = "";
+        this.isVerified = false;
     }
 
     public Contact(String name, String phone, String category, String city, boolean isCloud) {
@@ -112,6 +120,24 @@ public class Contact implements Serializable {
     @PropertyName("isCloud")
     public void setCloud(boolean cloud) { isCloud = cloud; }
 
+    @PropertyName("uploadedBy")
+    public String getUploadedBy() { return uploadedBy != null ? uploadedBy : ""; }
+
+    @PropertyName("uploadedBy")
+    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+
+    @PropertyName("uploaderUid")
+    public String getUploaderUid() { return uploaderUid != null ? uploaderUid : ""; }
+
+    @PropertyName("uploaderUid")
+    public void setUploaderUid(String uploaderUid) { this.uploaderUid = uploaderUid; }
+
+    @PropertyName("isVerified")
+    public boolean isVerified() { return isVerified; }
+
+    @PropertyName("isVerified")
+    public void setVerified(boolean verified) { isVerified = verified; }
+
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("name", name);
@@ -122,6 +148,9 @@ public class Contact implements Serializable {
         map.put("notes", getNotes());
         map.put("doNotCall", doNotCall);
         map.put("isCloud", isCloud);
+        map.put("uploadedBy", getUploadedBy());
+        map.put("uploaderUid", getUploaderUid());
+        map.put("isVerified", isVerified());
         return map;
     }
 }

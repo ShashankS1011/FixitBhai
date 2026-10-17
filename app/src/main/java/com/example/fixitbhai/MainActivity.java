@@ -44,6 +44,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -200,29 +201,40 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        String currentUserId = currentUser.getUid();
-        Log.d("FixitBhai_UID", "Querying contacts for UID: " + currentUserId);
-
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
-        firestore.collection("users")
-                .document(currentUserId)
+        // Fetch shared public cloud directory for the selected city so ALL users see uploaded contacts
+        firestore.collection("cities")
+                .document(selectedCity)
                 .collection("contacts")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (progressBar != null) progressBar.setVisibility(View.GONE);
 
                     List<Contact> cloudContacts = new ArrayList<>();
+                    Set<String> seenPhones = new HashSet<>();
+
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
                         Contact contact = doc.toObject(Contact.class);
-                        if (contact != null) {
-                            contact.setCloud(true);
-                            cloudContacts.add(contact);
+                        if (contact != null && contact.getPhone() != null) {
+                            String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
+                            if (!seenPhones.contains(cleanPhone)) {
+                                seenPhones.add(cleanPhone);
+                                contact.setCloud(true);
+                                cloudContacts.add(contact);
+                            }
                         }
                     }
 
+                    // Sort cloud contacts alphabetically by name
+                    Collections.sort(cloudContacts, (c1, c2) -> {
+                        String n1 = c1.getName() != null ? c1.getName() : "";
+                        String n2 = c2.getName() != null ? c2.getName() : "";
+                        return n1.compareToIgnoreCase(n2);
+                    });
+
                     if (cloudContacts.isEmpty()) {
-                        Toast.makeText(this, "No contacts found in your cloud account.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "No public cloud contacts found for " + selectedCity + ".", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -240,12 +252,14 @@ public class MainActivity extends AppCompatActivity {
 
         for (int i = 0; i < cloudContacts.size(); i++) {
             Contact c = cloudContacts.get(i);
-            contactLabels[i] = c.getName() + " (" + c.getCategory() + ")\n" + c.getPhone();
+            String uploader = c.getUploadedBy();
+            String uploaderText = (uploader != null && !uploader.isEmpty()) ? "\nVerified by: " + uploader : "";
+            contactLabels[i] = c.getName() + " (" + c.getCategory() + " • " + c.getCity() + ")\n" + c.getPhone() + uploaderText;
             checkedItems[i] = !dbHelper.contactExists(c.getPhone());
         }
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Import Cloud Contacts")
+                .setTitle("Cloud Contacts for " + selectedCity)
                 .setMultiChoiceItems(contactLabels, checkedItems, (dialog, which, isChecked) -> checkedItems[which] = isChecked)
                 .setPositiveButton("Import Selected", (dialog, which) -> {
                     int importedCount = 0;
@@ -597,8 +611,14 @@ public class MainActivity extends AppCompatActivity {
 
                         dbHelper.addContact(newContact);
                         if (shouldSyncCloud && currentUserId != null) {
-                            firestore.collection("users").document(currentUserId)
-                                    .collection("contacts").document(formattedNumber.replaceAll("[^0-9+]", "")).set(newContact.toMap());
+                            newContact.setCloud(true);
+                            String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
+                            newContact.setUploadedBy(uploaderEmail);
+                            newContact.setUploaderUid(currentUserId);
+                            newContact.setVerified(true);
+                            String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
+                            firestore.collection("cities").document(selectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                            firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
                         }
                     }
                 }

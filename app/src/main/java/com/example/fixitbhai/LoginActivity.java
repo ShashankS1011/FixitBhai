@@ -222,6 +222,9 @@ public class LoginActivity extends AppCompatActivity {
         String uid = mAuth.getUid();
         if (uid == null) return;
 
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        String uploaderEmail = currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
+
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         List<Contact> localContacts = dbHelper.getAllContacts();
 
@@ -231,7 +234,15 @@ public class LoginActivity extends AppCompatActivity {
         for (Contact c : localContacts) {
             String phone = c.getPhone();
             if (phone == null || phone.trim().isEmpty()) continue;
-            String docKey = phone.trim().replaceAll("[/\\s]", "_");
+            c.setCloud(true);
+            c.setUploadedBy(uploaderEmail);
+            c.setUploaderUid(uid);
+            c.setVerified(true);
+
+            String docKey = phone.trim().replaceAll("[^0-9+]", "");
+            String city = c.getCity() != null && !c.getCity().trim().isEmpty() ? c.getCity().trim() : "Prayagraj";
+
+            batch.set(firestore.collection("cities").document(city).collection("contacts").document(docKey), c.toMap());
             batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), c.toMap());
         }
         batch.commit();

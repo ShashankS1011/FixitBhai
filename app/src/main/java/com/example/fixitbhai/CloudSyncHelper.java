@@ -18,21 +18,14 @@ public class CloudSyncHelper {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     int addedCount = 0;
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        String name = doc.getString("name");
-                        String phone = doc.getString("phone");
-                        String category = doc.getString("category");
-
-                        if (phone != null && !dbHelper.contactExists(phone)) {
-                            // Notice we set isCloud to TRUE here
-                            Contact cloudContact = new Contact(name, phone, category, city, true);
-
-                            if (doc.contains("rating")) {
-                                Double rating = doc.getDouble("rating");
-                                if (rating != null) cloudContact.setRating(rating.floatValue());
+                        Contact cloudContact = doc.toObject(Contact.class);
+                        if (cloudContact != null && cloudContact.getPhone() != null) {
+                            String phone = cloudContact.getPhone();
+                            if (!dbHelper.contactExists(phone)) {
+                                cloudContact.setCloud(true);
+                                dbHelper.addContact(cloudContact);
+                                addedCount++;
                             }
-
-                            dbHelper.addContact(cloudContact);
-                            addedCount++;
                         }
                     }
                     callback.onSyncComplete(addedCount);
