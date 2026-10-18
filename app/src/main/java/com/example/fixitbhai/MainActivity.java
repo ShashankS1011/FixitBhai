@@ -2,6 +2,7 @@ package com.example.fixitbhai;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -11,6 +12,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,6 +26,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -205,6 +208,9 @@ public class MainActivity extends AppCompatActivity {
                 dbHelper.deleteContact(deletedContact.getPhone());
                 saveContactsToStorage();
 
+                // Remove from system phonebook / SIM card
+                deleteContactFromPhonebook(MainActivity.this, deletedContact.getPhone());
+
                 // Remove from user's personal Firestore Backup dynamically using active UID
                 FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
                 if (currentUser != null) {
@@ -212,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
                             .collection("contacts").document(deletedContact.getPhone().replaceAll("[^0-9+]", "")).delete();
                 }
 
-                Toast.makeText(MainActivity.this, deletedContact.getName() + " removed from your device", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, deletedContact.getName() + " deleted from app and phonebook", Toast.LENGTH_SHORT).show();
                 checkEmptyState();
                 refreshCategoryChips();
             }
@@ -620,6 +626,88 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    public static void deleteContactFromPhonebook(Context context, String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) return;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w("FixitBhai", "WRITE_CONTACTS permission not granted. Skipping system phonebook deletion.");
+            return;
+        }
+
+        try {
+            ContentResolver cr = context.getContentResolver();
+            Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
+            Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.LOOKUP_KEY}, null, null, null);
+
+            if (cursor != null) {
+                int deletedCount = 0;
+                while (cursor.moveToNext()) {
+                    int lookupKeyIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup.LOOKUP_KEY);
+                    if (lookupKeyIdx != -1) {
+                        String lookupKey = cursor.getString(lookupKeyIdx);
+                        Uri lookupUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey);
+                        deletedCount += cr.delete(lookupUri, null, null);
+                    }
+                }
+                cursor.close();
+                Log.i("FixitBhai", "Deleted " + deletedCount + " entry/entries from system phonebook for " + phoneNumber);
+            }
+        } catch (Exception e) {
+            Log.e("FixitBhai", "Error deleting contact from system phonebook: " + e.getMessage(), e);
+        }
+    }
+
+    public void showPrivacyPolicyAgreementDialog(boolean showToast) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setPadding(40, 30, 40, 20);
+
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText("Privacy Policy & Data Security");
+        tvTitle.setTextSize(20);
+        tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitle.setTextColor(Color.parseColor("#F8FAFC"));
+
+        TextView tvSubtitle = new TextView(this);
+        tvSubtitle.setText("Your personal contacts remain 100% private and secure.");
+        tvSubtitle.setTextSize(13);
+        tvSubtitle.setTextColor(Color.parseColor("#38BDF8"));
+        tvSubtitle.setPadding(0, 6, 0, 16);
+
+        TextView tvBody = new TextView(this);
+        tvBody.setLineSpacing(6f, 1f);
+        tvBody.setTextSize(13);
+        tvBody.setTextColor(Color.parseColor("#CBD5E1"));
+        tvBody.setText("At FixitBhai, we respect your personal privacy above everything else.\n\n" +
+                "1. 100% Offline Local Processing\n" +
+                "FixitBhai scans your device's phonebook STRICTLY LOCALLY on your phone to organize home repair experts (AC Repair, Plumbers, Electricians, RO Technicians). Unuploaded contacts remain stored exclusively in your device's private offline database.\n\n" +
+                "2. Zero Unsanctioned Cloud Access\n" +
+                "We NEVER read, store, transmit, or view any of your personal, family, or private contacts. Only technicians you EXPLICITLY choose to publish via long-press or Cloud Backup are uploaded to the shared directory.\n\n" +
+                "3. Complete Control & System Deletion\n" +
+                "When you delete a contact in FixitBhai, it is permanently deleted from your app database, your personal cloud backup, and your device's system phonebook/SIM card.\n\n" +
+                "4. No Third-Party Sharing\n" +
+                "Your contact data is never sold, shared with advertisers, or analyzed for marketing.");
+
+        container.addView(tvTitle);
+        container.addView(tvSubtitle);
+        container.addView(tvBody);
+        scrollView.addView(container);
+
+        new MaterialAlertDialogBuilder(this)
+                .setView(scrollView)
+                .setCancelable(false)
+                .setPositiveButton("I Agree & Accept", (dialog, which) -> {
+                    prefs.edit().putBoolean("KEY_PRIVACY_POLICY_ACCEPTED", true).apply();
+                    dialog.dismiss();
+                    checkContactPermissionAndScan(showToast);
+                })
+                .setNegativeButton("Decline & Exit", (dialog, which) -> finishAffinity())
+                .show();
+    }
+
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {
@@ -651,12 +739,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void proceedWithScan(boolean showToastIfNoNew) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
             importContactsFromPhone(showToastIfNoNew);
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, PERMISSION_REQUEST_READ_CONTACTS);
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.READ_CONTACTS,
+                    Manifest.permission.WRITE_CONTACTS
+            }, PERMISSION_REQUEST_READ_CONTACTS);
             refreshCategoryChips();
-            adapter.filterBy("", selectedCity);
+            adapter.filterBy("", getFilterCity());
             checkEmptyState();
         }
     }

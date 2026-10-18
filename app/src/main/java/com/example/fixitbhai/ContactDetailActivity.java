@@ -175,7 +175,10 @@ public class ContactDetailActivity extends AppCompatActivity {
         // 1. Delete from SQLite local database
         dbHelper.deleteContact(phone);
 
-        // 2. Delete from Firestore if authenticated
+        // 2. Delete from system phonebook / SIM card
+        MainActivity.deleteContactFromPhonebook(this, phone);
+
+        // 3. Delete from Firestore if authenticated
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId != null) {
             String cleanPhone = phone.replaceAll("[^0-9+]", "");
@@ -183,7 +186,7 @@ public class ContactDetailActivity extends AppCompatActivity {
             firestore.collection("users").document(userId).collection("contacts").document(cleanPhone).delete();
         }
 
-        Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Contact deleted from app and system phonebook", Toast.LENGTH_SHORT).show();
         finish();
     }
 
