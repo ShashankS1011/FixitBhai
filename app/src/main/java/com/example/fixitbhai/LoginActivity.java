@@ -42,6 +42,7 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private GoogleSignInClient mGoogleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
+    private ActivityResultLauncher<Intent> basicGoogleSignInLauncher;
 
     private boolean isRegistrationMode = false;
 
@@ -90,11 +91,29 @@ public class LoginActivity extends AppCompatActivity {
                             }
                         } catch (ApiException e) {
                             Log.e(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
-                            if (e.getStatusCode() == 10) {
-                                Toast.makeText(LoginActivity.this, "Google Sign-In (Code 10): Please add SHA-1 in Firebase Console or use Email Sign In.", Toast.LENGTH_LONG).show();
+                            if (e.getStatusCode() == 10 || e.getStatusCode() == 12500) {
+                                Log.i(TAG, "SHA-1 / Developer Error detected. Triggering basic Google Sign-In fallback...");
+                                performBasicGoogleSignIn();
                             } else {
                                 Toast.makeText(LoginActivity.this, "Google Sign-In Error (" + e.getStatusCode() + "): " + e.getMessage(), Toast.LENGTH_LONG).show();
                             }
+                        }
+                    }
+                });
+
+        basicGoogleSignInLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getData() != null) {
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                        try {
+                            GoogleSignInAccount account = task.getResult(ApiException.class);
+                            if (account != null && account.getEmail() != null) {
+                                signInWithGoogleEmail(account.getEmail(), account.getId());
+                            }
+                        } catch (ApiException e) {
+                            Log.e(TAG, "Basic Google Sign-In Error Code: " + e.getStatusCode(), e);
+                            Toast.makeText(LoginActivity.this, "Google Sign-In Error: Please use Email/Password Sign In.", Toast.LENGTH_LONG).show();
                         }
                     }
                 });
@@ -183,6 +202,17 @@ public class LoginActivity extends AppCompatActivity {
         Toast.makeText(this, "Opening Google Account Picker...", Toast.LENGTH_SHORT).show();
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         googleSignInLauncher.launch(signInIntent);
+    }
+
+    private void performBasicGoogleSignIn() {
+        GoogleSignInOptions basicGso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        GoogleSignInClient basicClient = GoogleSignIn.getClient(this, basicGso);
+        basicClient.signOut().addOnCompleteListener(task -> {
+            Intent intent = basicClient.getSignInIntent();
+            basicGoogleSignInLauncher.launch(intent);
+        });
     }
 
     private void signInWithFirebaseCredential(AuthCredential credential) {
