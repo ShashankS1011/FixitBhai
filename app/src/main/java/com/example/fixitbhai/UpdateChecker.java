@@ -150,7 +150,7 @@ public class UpdateChecker {
                 }
             }
 
-            Toast.makeText(context, "Downloading FixitBhai v" + versionTag + " update...", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Downloading FixitBhai v" + versionTag + " update... Please grant installation permission when prompted. Download may take a few seconds.", Toast.LENGTH_LONG).show();
 
             String fileName = "FixitBhai-v" + versionTag + ".apk";
             File destinationFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName);

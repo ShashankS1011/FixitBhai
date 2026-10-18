@@ -41,6 +41,11 @@ public class AboutActivity extends AppCompatActivity {
             cardPrivacyPolicy.setOnClickListener(v -> showPrivacyPolicyDialog());
         }
 
+        MaterialCardView cardHelpFAQ = findViewById(R.id.cardHelpFAQ);
+        if (cardHelpFAQ != null) {
+            cardHelpFAQ.setOnClickListener(v -> startActivity(new Intent(AboutActivity.this, HelpActivity.class)));
+        }
+
         android.widget.TextView tvVersion = findViewById(R.id.tvVersion);
         if (tvVersion != null) {
             tvVersion.setText("Version " + BuildConfig.VERSION_NAME);

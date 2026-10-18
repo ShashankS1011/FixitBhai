@@ -121,7 +121,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
         String uploader = contact.getUploadedBy();
         if (holder.tvUploader != null) {
-            if (uploader != null && !uploader.isEmpty()) {
+            if (contact.isCloud() && uploader != null && !uploader.isEmpty()) {
                 if (isAdminEmail(uploader)) {
                     holder.tvUploader.setText("Verified by Admin");
                     holder.tvUploader.setTextColor(Color.parseColor("#EF4444")); // Warning Red
@@ -158,11 +158,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                 uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
                             }
 
-                            // Keep isCloud as false locally so local contacts stay labeled Local on device
-                            contact.setUploadedBy(uploaderText);
-                            contact.setUploaderUid(user.getUid());
-                            contact.setVerified(true);
-
+                            // Keep local contact unaltered so local card stays strictly Local without cloud uploader tag
                             String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
                             String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
 
