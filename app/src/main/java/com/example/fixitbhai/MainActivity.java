@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseFirestore firestore;
 
-    private String selectedCity = "Prayagraj";
+    private String selectedCity = "All Cities";
 
     private ChipGroup chipGroupCategories;
     private Chip chipCitySelect;
@@ -551,7 +551,17 @@ public class MainActivity extends AppCompatActivity {
 
                 if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
 
-                adapter.filterBy("", getFilterCity());
+                if (dbHelper != null) {
+                    List<Contact> allLocal = dbHelper.getAllContacts();
+                    contactList.clear();
+                    contactList.addAll(allLocal);
+                    if (adapter != null) {
+                        adapter.updateData(contactList);
+                        adapter.filterBy("", getFilterCity());
+                    }
+                    refreshCategoryChips();
+                }
+
                 checkEmptyState();
 
                 Toast.makeText(MainActivity.this, "Switched filter to: " + selectedCity, Toast.LENGTH_SHORT).show();
@@ -591,7 +601,17 @@ public class MainActivity extends AppCompatActivity {
 
                         if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
 
-                        adapter.filterBy("", getFilterCity());
+                        if (dbHelper != null) {
+                            List<Contact> allLocal = dbHelper.getAllContacts();
+                            contactList.clear();
+                            contactList.addAll(allLocal);
+                            if (adapter != null) {
+                                adapter.updateData(contactList);
+                                adapter.filterBy("", getFilterCity());
+                            }
+                            refreshCategoryChips();
+                        }
+
                         checkEmptyState();
                         Toast.makeText(MainActivity.this, "Selected City: " + selectedCity, Toast.LENGTH_SHORT).show();
                     }
@@ -660,7 +680,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSavedState() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        selectedCity = prefs.getString(KEY_SELECTED_CITY, "Prayagraj");
+        selectedCity = prefs.getString(KEY_SELECTED_CITY, "All Cities");
 
         try {
             List<Contact> dbContacts = dbHelper.getAllContacts();

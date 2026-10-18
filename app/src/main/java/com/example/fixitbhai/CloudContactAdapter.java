@@ -67,7 +67,15 @@ public class CloudContactAdapter extends RecyclerView.Adapter<CloudContactAdapte
 
         String uploader = contact.getUploadedBy();
         if (uploader != null && !uploader.isEmpty()) {
-            holder.tvUploader.setText("Verified by " + uploader);
+            if (ContactAdapter.isAdminEmail(uploader)) {
+                holder.tvUploader.setText("Verified by Admin");
+                holder.tvUploader.setTextColor(android.graphics.Color.parseColor("#EF4444")); // Warning Red
+                holder.tvUploader.setTypeface(null, android.graphics.Typeface.BOLD);
+            } else {
+                holder.tvUploader.setText("Verified by " + uploader);
+                holder.tvUploader.setTextColor(android.graphics.Color.parseColor("#38BDF8")); // Cyan
+                holder.tvUploader.setTypeface(null, android.graphics.Typeface.NORMAL);
+            }
             holder.tvUploader.setVisibility(View.VISIBLE);
         } else {
             holder.tvUploader.setVisibility(View.GONE);

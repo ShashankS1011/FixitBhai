@@ -37,6 +37,12 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         this.contactListFull = new ArrayList<>(contactList);
     }
 
+    public static boolean isAdminEmail(String email) {
+        if (email == null) return false;
+        String lower = email.toLowerCase().trim();
+        return lower.contains("shashanksingh631@gmail.com") || lower.contains("shashankkawai631@gmail.com") || lower.equals("admin");
+    }
+
     @NonNull
     @Override
     public ContactViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -113,6 +119,24 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             context.startActivity(intent);
         });
 
+        String uploader = contact.getUploadedBy();
+        if (holder.tvUploader != null) {
+            if (uploader != null && !uploader.isEmpty()) {
+                if (isAdminEmail(uploader)) {
+                    holder.tvUploader.setText("Verified by Admin");
+                    holder.tvUploader.setTextColor(Color.parseColor("#EF4444")); // Warning Red
+                    holder.tvUploader.setTypeface(null, android.graphics.Typeface.BOLD);
+                } else {
+                    holder.tvUploader.setText("Verified by " + uploader);
+                    holder.tvUploader.setTextColor(Color.parseColor("#38BDF8")); // Cyan
+                    holder.tvUploader.setTypeface(null, android.graphics.Typeface.NORMAL);
+                }
+                holder.tvUploader.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvUploader.setVisibility(View.GONE);
+            }
+        }
+
         // Long Press -> Upload to Shared Cloud
         holder.itemView.setOnLongClickListener(v -> {
             new MaterialAlertDialogBuilder(context)
@@ -121,14 +145,37 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                     .setPositiveButton("Publish", (dialog, which) -> {
                         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         if (user != null) {
-                            String uploaderEmail = user.getEmail() != null && !user.getEmail().isEmpty() ? user.getEmail() : (user.getDisplayName() != null && !user.getDisplayName().isEmpty() ? user.getDisplayName() : "Verified Member");
-                            contact.setCloud(true);
-                            contact.setUploadedBy(uploaderEmail);
+                            String userEmail = user.getEmail() != null ? user.getEmail().trim() : "";
+                            String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
+                            String uploaderText;
+                            if (isAdminEmail(userEmail)) {
+                                uploaderText = "Admin";
+                            } else if (!displayName.isEmpty() && !userEmail.isEmpty()) {
+                                uploaderText = displayName + " (" + userEmail + ")";
+                            } else if (!userEmail.isEmpty()) {
+                                uploaderText = userEmail;
+                            } else {
+                                uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
+                            }
+
+                            // Keep isCloud as false locally so local contacts stay labeled Local on device
+                            contact.setUploadedBy(uploaderText);
                             contact.setUploaderUid(user.getUid());
                             contact.setVerified(true);
 
                             String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
                             String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+
+                            // Create a copy payload with isCloud = true for cloud directory
+                            Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
+                            cloudPayload.setRating(contact.getRating());
+                            cloudPayload.setNotes(contact.getNotes());
+                            cloudPayload.setDoNotCall(contact.isDoNotCall());
+                            cloudPayload.setEmergency(contact.isEmergency());
+                            cloudPayload.setReviewTags(contact.getReviewTags());
+                            cloudPayload.setUploadedBy(uploaderText);
+                            cloudPayload.setUploaderUid(user.getUid());
+                            cloudPayload.setVerified(true);
 
                             // 1. Publish to Shared City Cloud Directory for All Users
                             FirebaseFirestore.getInstance()
@@ -136,7 +183,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                     .document(city)
                                     .collection("contacts")
                                     .document(cleanPhone)
-                                    .set(contact.toMap())
+                                    .set(cloudPayload.toMap())
                                     .addOnSuccessListener(aVoid -> {
                                         // 2. Also save to personal backup collection
                                         FirebaseFirestore.getInstance()
@@ -144,7 +191,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                                 .document(user.getUid())
                                                 .collection("contacts")
                                                 .document(cleanPhone)
-                                                .set(contact.toMap());
+                                                .set(cloudPayload.toMap());
 
                                         Toast.makeText(context, contact.getName() + " published to " + city + " cloud directory!", Toast.LENGTH_SHORT).show();
                                         notifyItemChanged(position);

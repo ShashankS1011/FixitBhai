@@ -80,6 +80,34 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
+                    <!-- Full Name Input Field (Shown in Registration mode) -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilFullName"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:hint="Your Name (e.g. Ramesh Kumar)"
+                        android:textColorHint="@color/text_secondary"
+                        android:visibility="gone"
+                        app:boxBackgroundColor="@color/bg_dark"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxStrokeColor="@color/primary_blue"
+                        app:startIconDrawable="@drawable/ic_search"
+                        app:startIconTint="@color/accent_blue">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etFullName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPersonName"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <!-- Email Input Field -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilEmail"

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,10 +21,12 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
 
@@ -34,7 +37,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
 
-    private TextInputEditText etEmail, etPassword;
+    private TextInputLayout tilFullName;
+    private TextInputEditText etFullName, etEmail, etPassword;
     private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn;
     private TextView tvLoginTitle, tvLoginSubtitle;
 
@@ -54,6 +58,8 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
+        tilFullName = findViewById(R.id.tilFullName);
+        etFullName = findViewById(R.id.etFullName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnAuthAction = findViewById(R.id.btnAuthAction);
@@ -82,6 +88,7 @@ public class LoginActivity extends AppCompatActivity {
                             GoogleSignInAccount account = task.getResult(ApiException.class);
                             if (account != null) {
                                 String idToken = account.getIdToken();
+                                updateGoogleDisplayName(account);
                                 if (idToken != null) {
                                     AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
                                     signInWithFirebaseCredential(credential);
@@ -109,6 +116,7 @@ public class LoginActivity extends AppCompatActivity {
                         try {
                             GoogleSignInAccount account = task.getResult(ApiException.class);
                             if (account != null && account.getEmail() != null) {
+                                updateGoogleDisplayName(account);
                                 signInWithGoogleEmail(account.getEmail(), account.getId());
                             }
                         } catch (ApiException e) {
@@ -121,6 +129,18 @@ public class LoginActivity extends AppCompatActivity {
         btnAuthAction.setOnClickListener(v -> performEmailAuth());
         btnToggleMode.setOnClickListener(v -> toggleAuthMode());
         btnGoogleSignIn.setOnClickListener(v -> performGoogleSignIn());
+    }
+
+    private void updateGoogleDisplayName(GoogleSignInAccount account) {
+        if (account != null && account.getDisplayName() != null && !account.getDisplayName().trim().isEmpty()) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser != null) {
+                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                        .setDisplayName(account.getDisplayName().trim())
+                        .build();
+                currentUser.updateProfile(profileUpdates);
+            }
+        }
     }
 
     private String getWebClientId() {
@@ -144,20 +164,23 @@ public class LoginActivity extends AppCompatActivity {
         isRegistrationMode = !isRegistrationMode;
         if (isRegistrationMode) {
             tvLoginTitle.setText("Create Account");
-            tvLoginSubtitle.setText("Register with your email and password");
+            tvLoginSubtitle.setText("Register with your name, email and password");
             btnAuthAction.setText("Register Account");
             btnToggleMode.setText("Already have an account? Sign In");
+            if (tilFullName != null) tilFullName.setVisibility(View.VISIBLE);
         } else {
             tvLoginTitle.setText("Welcome to FixitBhai");
             tvLoginSubtitle.setText("Sign in with your email or Google account");
             btnAuthAction.setText("Sign In");
             btnToggleMode.setText("Don't have an account? Register");
+            if (tilFullName != null) tilFullName.setVisibility(View.GONE);
         }
     }
 
     private void performEmailAuth() {
         String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
         String password = Objects.requireNonNull(etPassword.getText()).toString().trim();
+        String fullName = etFullName != null && etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Enter a valid email address");
@@ -170,10 +193,21 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (isRegistrationMode) {
+            if (TextUtils.isEmpty(fullName)) {
+                if (etFullName != null) etFullName.setError("Please enter your name");
+                return;
+            }
             Toast.makeText(this, "Creating account...", Toast.LENGTH_SHORT).show();
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, task -> {
                         if (task.isSuccessful()) {
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            if (user != null) {
+                                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                        .setDisplayName(fullName)
+                                        .build();
+                                user.updateProfile(profileUpdates);
+                            }
                             syncLocalContactsToCloud();
                             Toast.makeText(LoginActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
                             navigateToMain();
@@ -252,7 +286,19 @@ public class LoginActivity extends AppCompatActivity {
         if (uid == null) return;
 
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        String uploaderEmail = currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
+        String userEmail = currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail().trim() : "";
+        String displayName = currentUser != null && currentUser.getDisplayName() != null && !currentUser.getDisplayName().trim().isEmpty() ? currentUser.getDisplayName().trim() : "";
+
+        String uploaderText;
+        if (ContactAdapter.isAdminEmail(userEmail)) {
+            uploaderText = "Admin";
+        } else if (!displayName.isEmpty() && !userEmail.isEmpty()) {
+            uploaderText = displayName + " (" + userEmail + ")";
+        } else if (!userEmail.isEmpty()) {
+            uploaderText = userEmail;
+        } else {
+            uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
+        }
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         List<Contact> localContacts = dbHelper.getAllContacts();
@@ -263,16 +309,26 @@ public class LoginActivity extends AppCompatActivity {
         for (Contact c : localContacts) {
             String phone = c.getPhone();
             if (phone == null || phone.trim().isEmpty()) continue;
-            c.setCloud(true);
-            c.setUploadedBy(uploaderEmail);
+            c.setUploadedBy(uploaderText);
             c.setUploaderUid(uid);
             c.setVerified(true);
 
             String docKey = phone.trim().replaceAll("[^0-9+]", "");
             String city = c.getCity() != null && !c.getCity().trim().isEmpty() ? c.getCity().trim() : "Prayagraj";
 
-            batch.set(firestore.collection("cities").document(city).collection("contacts").document(docKey), c.toMap());
-            batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), c.toMap());
+            // Create a payload copy with isCloud = true for the cloud directory
+            Contact cloudPayload = new Contact(c.getName(), c.getPhone(), c.getCategory(), city, true);
+            cloudPayload.setRating(c.getRating());
+            cloudPayload.setNotes(c.getNotes());
+            cloudPayload.setDoNotCall(c.isDoNotCall());
+            cloudPayload.setEmergency(c.isEmergency());
+            cloudPayload.setReviewTags(c.getReviewTags());
+            cloudPayload.setUploadedBy(uploaderText);
+            cloudPayload.setUploaderUid(uid);
+            cloudPayload.setVerified(true);
+
+            batch.set(firestore.collection("cities").document(city).collection("contacts").document(docKey), cloudPayload.toMap());
+            batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), cloudPayload.toMap());
         }
         batch.commit();
     }
