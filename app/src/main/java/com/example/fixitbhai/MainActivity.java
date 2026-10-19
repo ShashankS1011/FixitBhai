@@ -570,7 +570,7 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
 
         ListView listView = dialogView.findViewById(R.id.listViewCities);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_single_choice, cityArray);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.item_city_choice, cityArray);
         listView.setAdapter(arrayAdapter);
 
         for (int i = 0; i < cityArray.length; i++) {
