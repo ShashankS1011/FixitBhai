@@ -46,6 +46,11 @@ public class AboutActivity extends AppCompatActivity {
             cardHelpFAQ.setOnClickListener(v -> startActivity(new Intent(AboutActivity.this, HelpActivity.class)));
         }
 
+        MaterialCardView cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
+        if (cardDeleteAccount != null) {
+            cardDeleteAccount.setOnClickListener(v -> confirmAndDeleteUserAccount());
+        }
+
         android.widget.TextView tvVersion = findViewById(R.id.tvVersion);
         if (tvVersion != null) {
             tvVersion.setText("Version " + BuildConfig.VERSION_NAME);
@@ -105,6 +110,59 @@ public class AboutActivity extends AppCompatActivity {
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setView(scrollView)
                 .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void confirmAndDeleteUserAccount() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            android.widget.Toast.makeText(this, "No active user account logged in.", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Delete Account & Cloud Data")
+                .setMessage("Are you sure you want to permanently delete your account (" + (user.getEmail() != null ? user.getEmail() : "User") + ") and all personal cloud backup data? This action cannot be undone.")
+                .setPositiveButton("Delete Account", (dialog, which) -> {
+                    String uid = user.getUid();
+                    com.google.firebase.firestore.FirebaseFirestore firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+
+                    // Delete personal cloud backup collection
+                    firestore.collection("users").document(uid).collection("contacts").get()
+                            .addOnSuccessListener(snapshots -> {
+                                for (com.google.firebase.firestore.DocumentSnapshot doc : snapshots) {
+                                    doc.getReference().delete();
+                                }
+                                firestore.collection("users").document(uid).delete();
+                            });
+
+                    // Delete user from Firebase Auth
+                    user.delete().addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            android.widget.Toast.makeText(AboutActivity.this, "Your account has been permanently deleted.", android.widget.Toast.LENGTH_LONG).show();
+                            com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                            Intent intent = new Intent(AboutActivity.this, LoginActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            String err = task.getException() != null ? task.getException().getMessage() : "Account deletion failed";
+                            new com.google.android.material.dialog.MaterialAlertDialogBuilder(AboutActivity.this)
+                                    .setTitle("Re-authentication Required")
+                                    .setMessage("For security reasons, please log out and log back in before deleting your account.\n\nError: " + err)
+                                    .setPositiveButton("Log Out", (d, w) -> {
+                                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                                        Intent intent = new Intent(AboutActivity.this, LoginActivity.class);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(intent);
+                                        finish();
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 

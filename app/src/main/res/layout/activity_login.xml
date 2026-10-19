@@ -163,6 +163,18 @@
                             android:textSize="15sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Forgot Password Action -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnForgotPassword"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="2dp"
+                        android:text="Forgot Password?"
+                        android:textColor="@color/accent_blue"
+                        android:textSize="12sp" />
+
                     <!-- Primary Auth Action Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAuthAction"

@@ -38,7 +38,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private TextInputLayout tilFullName;
     private TextInputEditText etFullName, etEmail, etPassword;
-    private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn;
+    private MaterialButton btnAuthAction, btnToggleMode, btnGoogleSignIn, btnForgotPassword;
     private TextView tvLoginTitle, tvLoginSubtitle;
 
     private FirebaseAuth mAuth;
@@ -63,8 +63,13 @@ public class LoginActivity extends AppCompatActivity {
         btnAuthAction = findViewById(R.id.btnAuthAction);
         btnToggleMode = findViewById(R.id.btnToggleMode);
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        btnForgotPassword = findViewById(R.id.btnForgotPassword);
         tvLoginTitle = findViewById(R.id.tvLoginTitle);
         tvLoginSubtitle = findViewById(R.id.tvLoginSubtitle);
+
+        if (btnForgotPassword != null) {
+            btnForgotPassword.setOnClickListener(v -> performForgotPassword());
+        }
 
         // Configure Google Sign In Options
         String webClientId = getWebClientId();
@@ -147,13 +152,59 @@ public class LoginActivity extends AppCompatActivity {
             btnAuthAction.setText("Register Account");
             btnToggleMode.setText("Already have an account? Sign In");
             if (tilFullName != null) tilFullName.setVisibility(View.VISIBLE);
+            if (btnForgotPassword != null) btnForgotPassword.setVisibility(View.GONE);
         } else {
             tvLoginTitle.setText("Welcome to FixitBhai");
             tvLoginSubtitle.setText("Sign in with your email or Google account");
             btnAuthAction.setText("Sign In");
             btnToggleMode.setText("Don't have an account? Register");
             if (tilFullName != null) tilFullName.setVisibility(View.GONE);
+            if (btnForgotPassword != null) btnForgotPassword.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void performForgotPassword() {
+        String email = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            com.google.android.material.textfield.TextInputLayout tilEmailReset = new com.google.android.material.textfield.TextInputLayout(this);
+            tilEmailReset.setHint("Enter your account email");
+            tilEmailReset.setPadding(32, 16, 32, 16);
+
+            com.google.android.material.textfield.TextInputEditText etEmailReset = new com.google.android.material.textfield.TextInputEditText(this);
+            etEmailReset.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+            if (!email.isEmpty()) etEmailReset.setText(email);
+            tilEmailReset.addView(etEmailReset);
+
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setTitle("Reset Password")
+                    .setMessage("Enter the email address associated with your FixitBhai account to receive a password reset link.")
+                    .setView(tilEmailReset)
+                    .setPositiveButton("Send Reset Link", (dialog, which) -> {
+                        String inputEmail = etEmailReset.getText() != null ? etEmailReset.getText().toString().trim() : "";
+                        if (!TextUtils.isEmpty(inputEmail) && Patterns.EMAIL_ADDRESS.matcher(inputEmail).matches()) {
+                            sendPasswordResetEmail(inputEmail);
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Please enter a valid email address.", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else {
+            sendPasswordResetEmail(email);
+        }
+    }
+
+    private void sendPasswordResetEmail(String email) {
+        Toast.makeText(this, "Sending password reset email...", Toast.LENGTH_SHORT).show();
+        mAuth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(LoginActivity.this, "Password reset email sent to " + email + ". Please check your inbox!", Toast.LENGTH_LONG).show();
+                    } else {
+                        String err = task.getException() != null ? task.getException().getMessage() : "Failed to send password reset email";
+                        Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     private void performEmailAuth() {
