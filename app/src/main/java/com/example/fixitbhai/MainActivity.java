@@ -741,9 +741,63 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    private void fetchPublicCloudContactsForMainList(boolean showToast) {
+        firestore.collectionGroup("contacts")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots == null || queryDocumentSnapshots.isEmpty()) return;
+
+                    Set<String> existingPhones = new HashSet<>();
+                    for (Contact c : contactList) {
+                        if (c.getPhone() != null) {
+                            existingPhones.add(c.getPhone().replaceAll("[^0-9]", ""));
+                        }
+                    }
+
+                    boolean addedNewCloudContacts = false;
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Contact cloudContact = doc.toObject(Contact.class);
+                        if (cloudContact != null && cloudContact.getPhone() != null) {
+                            String cleanPhone = cloudContact.getPhone().replaceAll("[^0-9]", "");
+                            if (!existingPhones.contains(cleanPhone)) {
+                                existingPhones.add(cleanPhone);
+                                cloudContact.setCloud(true);
+                                contactList.add(cloudContact);
+                                addedNewCloudContacts = true;
+                            }
+                        }
+                    }
+
+                    if (addedNewCloudContacts) {
+                        Collections.sort(contactList, (c1, c2) -> {
+                            String city1 = c1.getCity() != null ? c1.getCity() : "";
+                            String city2 = c2.getCity() != null ? c2.getCity() : "";
+                            int cityComp = city1.compareToIgnoreCase(city2);
+                            if (cityComp != 0) return cityComp;
+                            String name1 = c1.getName() != null ? c1.getName() : "";
+                            String name2 = c2.getName() != null ? c2.getName() : "";
+                            return name1.compareToIgnoreCase(name2);
+                        });
+
+                        if (adapter != null) {
+                            adapter.updateData(contactList);
+                            adapter.filterBy("", getFilterCity());
+                        }
+                        refreshCategoryChips();
+                        checkEmptyState();
+
+                        if (showToast) {
+                            Toast.makeText(MainActivity.this, "Loaded shared public cloud directory!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.w("FixitBhai", "Failed fetching public cloud contacts: " + e.getMessage()));
+    }
+
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         restoreUserCloudBackup();
+        fetchPublicCloudContactsForMainList(showToastIfNoNew);
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {
             showCloudBackupPreferenceDialog(showToastIfNoNew);
             return;
