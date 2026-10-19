@@ -340,6 +340,8 @@ public class LoginActivity extends AppCompatActivity {
         String email = account.getEmail().trim();
         String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
 
+        if (etEmail != null) etEmail.setText(email);
+
         FirebaseUser current = mAuth.getCurrentUser();
         if (current != null && email.equalsIgnoreCase(current.getEmail())) {
             updateGoogleDisplayName(displayName);
@@ -360,19 +362,19 @@ public class LoginActivity extends AppCompatActivity {
                                         updateGoogleDisplayName(displayName);
                                         restoreUserCloudBackupAndNavigate();
                                     } else {
-                                        FirebaseUser activeUser = mAuth.getCurrentUser();
-                                        if (activeUser != null) {
-                                            updateGoogleDisplayName(displayName);
-                                            restoreUserCloudBackupAndNavigate();
+                                        if (etPassword != null && etPassword.getText() != null && !TextUtils.isEmpty(etPassword.getText())) {
+                                            String userPass = etPassword.getText().toString().trim();
+                                            mAuth.signInWithEmailAndPassword(email, userPass)
+                                                    .addOnCompleteListener(this, passTask -> {
+                                                        if (passTask.isSuccessful()) {
+                                                            updateGoogleDisplayName(displayName);
+                                                            restoreUserCloudBackupAndNavigate();
+                                                        } else {
+                                                            Toast.makeText(LoginActivity.this, "Welcome " + email + "! Please enter your password to sign in.", Toast.LENGTH_LONG).show();
+                                                        }
+                                                    });
                                         } else {
-                                            mAuth.signInAnonymously().addOnCompleteListener(this, anonTask -> {
-                                                if (anonTask.isSuccessful()) {
-                                                    updateGoogleDisplayName(displayName);
-                                                    restoreUserCloudBackupAndNavigate();
-                                                } else {
-                                                    navigateToMain();
-                                                }
-                                            });
+                                            Toast.makeText(LoginActivity.this, "Welcome " + email + "! Please enter your password to sign in.", Toast.LENGTH_LONG).show();
                                         }
                                     }
                                 });
