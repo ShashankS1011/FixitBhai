@@ -227,7 +227,7 @@ public class UpdateChecker {
             installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
             installIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
             context.startActivity(installIntent);
-            Toast.makeText(context, "Opening installer...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Opening installer... Note: If package conflict occurs, please uninstall previous version once.", Toast.LENGTH_LONG).show();
 
         } catch (Exception e) {
             Log.e(TAG, "Package installation failed", e);

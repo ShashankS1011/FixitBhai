@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Modern Production Slate & Electric Blue Palette -->
-    <color name="bg_dark">#0B132B</color>
-    <color name="surface_dark">#1C2541</color>
-    <color name="surface_variant">#3A506B</color>
-    <color name="surface_container">#162032</color>
+    <!-- Ultra-Modern Deep Midnight Slate Palette -->
+    <color name="bg_dark">#090D16</color>
+    <color name="surface_dark">#111827</color>
+    <color name="surface_variant">#1F2937</color>
+    <color name="surface_container">#131C2E</color>
 
-    <color name="primary_blue">#2563EB</color>
-    <color name="primary_blue_variant">#1D4ED8</color>
-    <color name="accent_blue">#38BDF8</color>
+    <color name="primary_blue">#3B82F6</color>
+    <color name="primary_blue_variant">#2563EB</color>
+    <color name="accent_blue">#60A5FA</color>
     <color name="accent_cyan">#06B6D4</color>
     <color name="accent_green">#10B981</color>
     <color name="accent_red">#EF4444</color>
     <color name="accent_yellow">#F59E0B</color>
 
-    <color name="card_stroke">#2D3748</color>
-    <color name="chip_bg">#1E293B</color>
+    <color name="card_stroke">#1F2937</color>
+    <color name="chip_bg">#111827</color>
 
-    <color name="text_primary">#F8FAFC</color>
-    <color name="text_secondary">#CBD5E1</color>
-    <color name="text_muted">#94A3B8</color>
+    <color name="text_primary">#F9FAFB</color>
+    <color name="text_secondary">#9CA3AF</color>
+    <color name="text_muted">#6B7280</color>
 </resources>
