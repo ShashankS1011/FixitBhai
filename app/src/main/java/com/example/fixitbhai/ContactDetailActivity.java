@@ -158,13 +158,16 @@ public class ContactDetailActivity extends AppCompatActivity {
 
             String cleanPhone = phone.replaceAll("[^0-9+]", "");
 
-            // If city was edited, delete old document from Firestore city directory
-            if (oldCity != null && !oldCity.isEmpty() && !oldCity.equalsIgnoreCase(city)) {
-                firestore.collection("cities").document(oldCity).collection("contacts").document(cleanPhone).delete();
-            }
-
-            firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
+            // Save to user's private cloud backup
             firestore.collection("users").document(user.getUid()).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
+
+            // ONLY update the public shared city directory if this contact was explicitly published as a cloud contact
+            if (isCloud) {
+                if (oldCity != null && !oldCity.isEmpty() && !oldCity.equalsIgnoreCase(city)) {
+                    firestore.collection("cities").document(oldCity).collection("contacts").document(cleanPhone).delete();
+                }
+                firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
+            }
         }
 
         Toast.makeText(this, "Contact details updated successfully", Toast.LENGTH_SHORT).show();

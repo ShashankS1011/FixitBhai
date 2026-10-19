@@ -316,9 +316,21 @@ public class LoginActivity extends AppCompatActivity {
                         updateGoogleDisplayName(displayName);
                         Toast.makeText(LoginActivity.this, "Google Sign In Successful!", Toast.LENGTH_SHORT).show();
                         restoreUserCloudBackupAndNavigate();
+                    } else if (task.getException() instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null) {
+                            user.linkWithCredential(credential).addOnCompleteListener(linkTask -> {
+                                updateGoogleDisplayName(displayName);
+                                Toast.makeText(LoginActivity.this, "Google account linked successfully!", Toast.LENGTH_SHORT).show();
+                                restoreUserCloudBackupAndNavigate();
+                            });
+                        } else {
+                            restoreUserCloudBackupAndNavigate();
+                        }
                     } else {
                         String err = task.getException() != null ? task.getException().getMessage() : "Google Sign-In failed";
-                        Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, "Sign-In: " + err, Toast.LENGTH_SHORT).show();
+                        restoreUserCloudBackupAndNavigate();
                     }
                 });
     }
@@ -327,6 +339,13 @@ public class LoginActivity extends AppCompatActivity {
         if (account == null || account.getEmail() == null) return;
         String email = account.getEmail().trim();
         String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
+
+        FirebaseUser current = mAuth.getCurrentUser();
+        if (current != null && email.equalsIgnoreCase(current.getEmail())) {
+            updateGoogleDisplayName(displayName);
+            restoreUserCloudBackupAndNavigate();
+            return;
+        }
 
         String pass = "GoogleAuth_" + Math.abs(email.hashCode());
         mAuth.signInWithEmailAndPassword(email, pass)
@@ -341,8 +360,8 @@ public class LoginActivity extends AppCompatActivity {
                                         updateGoogleDisplayName(displayName);
                                         restoreUserCloudBackupAndNavigate();
                                     } else {
-                                        FirebaseUser current = mAuth.getCurrentUser();
-                                        if (current != null) {
+                                        FirebaseUser activeUser = mAuth.getCurrentUser();
+                                        if (activeUser != null) {
                                             updateGoogleDisplayName(displayName);
                                             restoreUserCloudBackupAndNavigate();
                                         } else {
