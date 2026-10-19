@@ -116,7 +116,8 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnAbout = findViewById(R.id.btnAbout);
         ImageButton btnLogout = findViewById(R.id.btnLogout);
         ImageButton btnCloudSync = findViewById(R.id.btnCloudSync);
-        FloatingActionButton btnSearch = findViewById(R.id.btnSearch);
+        ImageButton btnHelp = findViewById(R.id.btnHelp);
+        FloatingActionButton btnFabHelp = findViewById(R.id.btnFabHelp);
 
         recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
         contactList = new ArrayList<>();
@@ -241,9 +242,8 @@ public class MainActivity extends AppCompatActivity {
         if (btnAbout != null) btnAbout.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AboutActivity.class)));
         if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
-
-        // Trigger the Combined Sync Process on manual search click
-        if (btnSearch != null) btnSearch.setOnClickListener(v -> syncWithCloudAndPhonebook(true));
+        if (btnHelp != null) btnHelp.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HelpActivity.class)));
+        if (btnFabHelp != null) btnFabHelp.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HelpActivity.class)));
     }
 
     @Override

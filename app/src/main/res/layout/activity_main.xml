@@ -64,11 +64,23 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <!-- Help & FAQ Button -->
+                <ImageButton
+                    android:id="@+id/btnHelp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Help &amp; FAQ"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_help"
+                    app:tint="@color/accent_blue" />
+
                 <!-- Cloud Picker Button -->
                 <ImageButton
                     android:id="@+id/btnCloudSync"
                     android:layout_width="42dp"
                     android:layout_height="42dp"
+                    android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/content_desc_cloud_import"
                     android:padding="9dp"
@@ -218,13 +230,13 @@
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/btnSearch"
+        android:id="@+id/btnFabHelp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
-        android:contentDescription="Search &amp; Sync"
-        android:src="@drawable/ic_search"
+        android:contentDescription="Help &amp; FAQ"
+        android:src="@drawable/ic_help"
         app:backgroundTint="@color/primary_blue"
         app:tint="@color/text_primary" />
 
