@@ -5,28 +5,35 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Outer Electric Blue Hexagon Accent Frame -->
+    <!-- Outer Sleek Cyan Ring Accent -->
     <path
-        android:fillColor="#0F62FE"
-        android:pathData="M54,18 L82,34.1 V66.3 L54,82.4 L26,66.3 V34.1 Z" />
+        android:fillColor="#00000000"
+        android:pathData="M54,18 C73.88,18 90,34.12 90,54 C90,73.88 73.88,90 54,90 C34.12,90 18,73.88 18,54 C18,34.12 34.12,18 54,18 Z"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="1.5" />
 
-    <!-- Inner Dark Slate Shield Core -->
+    <!-- Outer Hexagon Badge Body with Precision Geometry -->
     <path
-        android:fillColor="#1E293B"
-        android:pathData="M54,22 L78,36 V64 L54,78 L30,64 V36 Z" />
+        android:fillColor="#2563EB"
+        android:pathData="M54,23 L79,37.4 V66.6 L54,81 L29,66.6 V37.4 Z" />
 
-    <!-- Sharp Monogram 'F' with Wrench Feature -->
+    <!-- Inner Dark Core Glass Shield -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M54,27 C68,27 75,34 75,54 C75,74 68,77 54,77 C40,77 33,74 33,54 C33,34 40,27 54,27 Z" />
+
+    <!-- Precision Monogram 'F' with Integrated Wrench Form -->
     <path
         android:fillColor="#F8FAFC"
-        android:pathData="M38,32 H68 V41 H48 V47 H62 V56 H48 V68 H38 Z" />
+        android:pathData="M40,36 H68 C68,36 68,43 62,43 H49 V49 H63 V57 H49 V70 H40 Z" />
 
     <!-- Metallic Cyan Wrench Head Accent -->
     <path
         android:fillColor="#38BDF8"
-        android:pathData="M62,32 V41 H68 C68,36 65,32 62,32 Z" />
+        android:pathData="M62,36 C66,36 68,39 68,43 H62 Z" />
 
     <!-- Active Service Availability Indicator Glow Dot -->
     <path
         android:fillColor="#10B981"
-        android:pathData="M68,60 A5,5 0 1,0 68,70 A5,5 0 1,0 68,60 Z" />
+        android:pathData="M67,61 A4.5,4.5 0 1,0 67,70 A4.5,4.5 0 1,0 67,61 Z" />
 </vector>
