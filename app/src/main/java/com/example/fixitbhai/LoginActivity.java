@@ -208,9 +208,8 @@ public class LoginActivity extends AppCompatActivity {
                                         .build();
                                 user.updateProfile(profileUpdates);
                             }
-                            syncLocalContactsToCloud();
                             Toast.makeText(LoginActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
-                            navigateToMain();
+                            restoreUserCloudBackupAndNavigate();
                         } else {
                             String err = task.getException() != null ? task.getException().getMessage() : "Registration failed";
                             Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
@@ -221,9 +220,8 @@ public class LoginActivity extends AppCompatActivity {
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, task -> {
                         if (task.isSuccessful()) {
-                            syncLocalContactsToCloud();
                             Toast.makeText(LoginActivity.this, "Sign In Successful!", Toast.LENGTH_SHORT).show();
-                            navigateToMain();
+                            restoreUserCloudBackupAndNavigate();
                         } else {
                             String err = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
                             Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
@@ -253,9 +251,8 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        syncLocalContactsToCloud();
                         Toast.makeText(LoginActivity.this, "Google Sign In Successful!", Toast.LENGTH_SHORT).show();
-                        navigateToMain();
+                        restoreUserCloudBackupAndNavigate();
                     } else {
                         String err = task.getException() != null ? task.getException().getMessage() : "Google Sign-In failed";
                         Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
@@ -269,15 +266,42 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        syncLocalContactsToCloud();
-                        navigateToMain();
+                        restoreUserCloudBackupAndNavigate();
                     } else {
                         mAuth.createUserWithEmailAndPassword(email, pass)
                                 .addOnCompleteListener(this, createTask -> {
-                                    syncLocalContactsToCloud();
-                                    navigateToMain();
+                                    restoreUserCloudBackupAndNavigate();
                                 });
                     }
+                });
+    }
+
+    private void restoreUserCloudBackupAndNavigate() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            navigateToMain();
+            return;
+        }
+
+        String uid = currentUser.getUid();
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+
+        firestore.collection("users").document(uid).collection("contacts")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult()) {
+                            Contact contact = doc.toObject(Contact.class);
+                            if (contact != null && contact.getPhone() != null) {
+                                contact.setCloud(true);
+                                if (!dbHelper.contactExists(contact.getPhone())) {
+                                    dbHelper.addContact(contact);
+                                }
+                            }
+                        }
+                    }
+                    syncLocalContactsToCloud();
+                    navigateToMain();
                 });
     }
 

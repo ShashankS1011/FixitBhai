@@ -708,8 +708,42 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void restoreUserCloudBackup() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        firestore.collection("users").document(currentUser.getUid()).collection("contacts")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean restoredAny = false;
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Contact contact = doc.toObject(Contact.class);
+                        if (contact != null && contact.getPhone() != null) {
+                            contact.setCloud(true);
+                            if (!dbHelper.contactExists(contact.getPhone())) {
+                                dbHelper.addContact(contact);
+                                restoredAny = true;
+                            }
+                        }
+                    }
+
+                    if (restoredAny) {
+                        contactList.clear();
+                        contactList.addAll(dbHelper.getAllContacts());
+                        saveContactsToStorage();
+                        if (adapter != null) {
+                            adapter.updateData(contactList);
+                            adapter.filterBy("", getFilterCity());
+                        }
+                        refreshCategoryChips();
+                        checkEmptyState();
+                    }
+                });
+    }
+
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        restoreUserCloudBackup();
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {
             showCloudBackupPreferenceDialog(showToastIfNoNew);
             return;
