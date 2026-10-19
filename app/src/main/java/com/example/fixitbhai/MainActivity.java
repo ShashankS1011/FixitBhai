@@ -248,12 +248,7 @@ public class MainActivity extends AppCompatActivity {
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
         if (btnHelp != null) btnHelp.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HelpActivity.class)));
         if (btnFeedback != null) {
-            btnFeedback.setOnClickListener(v -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(ISSUES_URL));
-                    startActivity(intent);
-                } catch (Exception ignored) {}
-            });
+            btnFeedback.setOnClickListener(v -> showReportIssueConfirmationDialog());
         }
     }
 
@@ -293,6 +288,21 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         }
         prefs.edit().putString("KEY_LAST_SEEN_VERSION", currentVersion).apply();
+    }
+
+    private void showReportIssueConfirmationDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Report Issue / Submit Feedback")
+                .setMessage("Do you want to report an issue or submit feedback for FixitBhai?\n\nYou will now be redirected to our GitHub repository issue page in your web browser.")
+                .setPositiveButton("Yes, Take Me to GitHub", (dialog, which) -> {
+                    Toast.makeText(MainActivity.this, "Opening GitHub in browser...", Toast.LENGTH_SHORT).show();
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(ISSUES_URL));
+                        startActivity(intent);
+                    } catch (Exception ignored) {}
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private String getFilterCity() {
