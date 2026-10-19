@@ -139,43 +139,53 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             }
         }
 
-        // Long Press -> Upload to Shared Cloud
+        // Long Press -> Upload to Shared Cloud or Submit Moderation Request
         holder.itemView.setOnLongClickListener(v -> {
+            com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) {
+                Toast.makeText(context, "Please log in to publish contacts.", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+
+            String userEmail = user.getEmail() != null ? user.getEmail().trim() : "";
+            boolean isAdmin = isAdminEmail(userEmail);
+
+            String dialogTitle = isAdmin ? "Publish to Shared Cloud (Admin)" : "Request Cloud Publication";
+            String dialogMsg = isAdmin
+                    ? "Publish " + contact.getName() + " directly to the public FixitBhai cloud directory for " + contact.getCity() + "?"
+                    : "Submit " + contact.getName() + " to the admin moderation queue for review before publishing to " + contact.getCity() + "?";
+
             new MaterialAlertDialogBuilder(context)
-                    .setTitle("Publish to Shared Cloud")
-                    .setMessage("Upload " + contact.getName() + " to the public FixitBhai cloud directory so all users in " + contact.getCity() + " can access it?")
-                    .setPositiveButton("Publish", (dialog, which) -> {
-                        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                        if (user != null) {
-                            String userEmail = user.getEmail() != null ? user.getEmail().trim() : "";
-                            String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
-                            String uploaderText;
-                            if (isAdminEmail(userEmail)) {
-                                uploaderText = "Admin";
-                            } else if (!displayName.isEmpty() && !userEmail.isEmpty()) {
-                                uploaderText = displayName + " (" + userEmail + ")";
-                            } else if (!userEmail.isEmpty()) {
-                                uploaderText = userEmail;
-                            } else {
-                                uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
-                            }
+                    .setTitle(dialogTitle)
+                    .setMessage(dialogMsg)
+                    .setPositiveButton(isAdmin ? "Publish" : "Submit Request", (dialog, which) -> {
+                        String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
+                        String uploaderText;
+                        if (isAdmin) {
+                            uploaderText = "Admin";
+                        } else if (!displayName.isEmpty() && !userEmail.isEmpty()) {
+                            uploaderText = displayName + " (" + userEmail + ")";
+                        } else if (!userEmail.isEmpty()) {
+                            uploaderText = userEmail;
+                        } else {
+                            uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
+                        }
 
-                            // Keep local contact unaltered so local card stays strictly Local without cloud uploader tag
-                            String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
-                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+                        String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
+                        String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
 
-                            // Create a copy payload with isCloud = true for cloud directory
-                            Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
-                            cloudPayload.setRating(contact.getRating());
-                            cloudPayload.setNotes(contact.getNotes());
-                            cloudPayload.setDoNotCall(contact.isDoNotCall());
-                            cloudPayload.setEmergency(contact.isEmergency());
-                            cloudPayload.setReviewTags(contact.getReviewTags());
-                            cloudPayload.setUploadedBy(uploaderText);
-                            cloudPayload.setUploaderUid(user.getUid());
-                            cloudPayload.setVerified(true);
+                        Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
+                        cloudPayload.setRating(contact.getRating());
+                        cloudPayload.setNotes(contact.getNotes());
+                        cloudPayload.setDoNotCall(contact.isDoNotCall());
+                        cloudPayload.setEmergency(contact.isEmergency());
+                        cloudPayload.setReviewTags(contact.getReviewTags());
+                        cloudPayload.setUploadedBy(uploaderText);
+                        cloudPayload.setUploaderUid(user.getUid());
+                        cloudPayload.setVerified(isAdmin);
 
-                            // 1. Publish to Shared City Cloud Directory for All Users
+                        if (isAdmin) {
+                            // Admin publishes directly to public city directory & personal backup
                             FirebaseFirestore.getInstance()
                                     .collection("cities")
                                     .document(city)
@@ -183,7 +193,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                     .document(cleanPhone)
                                     .set(cloudPayload.toMap())
                                     .addOnSuccessListener(aVoid -> {
-                                        // 2. Also save to personal backup collection
                                         FirebaseFirestore.getInstance()
                                                 .collection("users")
                                                 .document(user.getUid())
@@ -196,7 +205,26 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                     })
                                     .addOnFailureListener(e -> Toast.makeText(context, "Cloud upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         } else {
-                            Toast.makeText(context, "Error: User not logged in.", Toast.LENGTH_SHORT).show();
+                            // Regular user submits a moderation request to 'moderation_requests' collection
+                            java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+                            requestMap.put("action", "ADD");
+                            requestMap.put("name", contact.getName());
+                            requestMap.put("phone", contact.getPhone());
+                            requestMap.put("category", contact.getCategory());
+                            requestMap.put("city", city);
+                            requestMap.put("uploaderEmail", userEmail);
+                            requestMap.put("uploaderUid", user.getUid());
+                            requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                            requestMap.put("status", "PENDING");
+                            requestMap.put("contactPayload", cloudPayload.toMap());
+
+                            FirebaseFirestore.getInstance()
+                                    .collection("moderation_requests")
+                                    .add(requestMap)
+                                    .addOnSuccessListener(docRef -> {
+                                        Toast.makeText(context, "Moderation request submitted! Admin will review your submission.", Toast.LENGTH_LONG).show();
+                                    })
+                                    .addOnFailureListener(e -> Toast.makeText(context, "Request failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         }
                     })
                     .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())

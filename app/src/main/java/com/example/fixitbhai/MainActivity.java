@@ -243,6 +243,9 @@ public class MainActivity extends AppCompatActivity {
         // Check and display post-update confirmation banner
         checkPostUpdateBanner();
 
+        // Check for pending cloud contact moderation requests (Admin Only)
+        checkPendingModerationRequests();
+
         if (btnAbout != null) btnAbout.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AboutActivity.class)));
         if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
@@ -302,6 +305,72 @@ public class MainActivity extends AppCompatActivity {
                     } catch (Exception ignored) {}
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void checkPendingModerationRequests() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || user.getEmail() == null || !ContactAdapter.isAdminEmail(user.getEmail())) return;
+
+        firestore.collection("moderation_requests")
+                .whereEqualTo("status", "PENDING")
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (snapshots != null && !snapshots.isEmpty() && chipCitySelect != null) {
+                        chipCitySelect.setText("City: " + selectedCity + " (" + snapshots.size() + " Pending Review)");
+                        chipCitySelect.setOnClickListener(v -> showAdminModerationDialog(snapshots.getDocuments()));
+                    }
+                });
+    }
+
+    private void showAdminModerationDialog(List<DocumentSnapshot> pendingDocs) {
+        if (pendingDocs == null || pendingDocs.isEmpty()) {
+            Toast.makeText(this, "No pending cloud moderation requests.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] items = new String[pendingDocs.size()];
+        for (int i = 0; i < pendingDocs.size(); i++) {
+            DocumentSnapshot doc = pendingDocs.get(i);
+            String name = doc.getString("name");
+            String city = doc.getString("city");
+            String email = doc.getString("uploaderEmail");
+            items[i] = name + " (" + city + ") [By: " + email + "]";
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Pending Cloud Moderation Requests")
+                .setItems(items, (dialog, which) -> {
+                    DocumentSnapshot doc = pendingDocs.get(which);
+                    String reqId = doc.getId();
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> payloadMap = (java.util.Map<String, Object>) doc.get("contactPayload");
+                    String city = doc.getString("city");
+                    String rawPhone = doc.getString("phone");
+                    String cleanPhone = rawPhone != null ? rawPhone.replaceAll("[^0-9+]", "") : "";
+
+                    new MaterialAlertDialogBuilder(MainActivity.this)
+                            .setTitle("Review Request")
+                            .setMessage("Approve or Reject publication of " + doc.getString("name") + " to " + city + "?")
+                            .setPositiveButton("Approve & Publish", (d, w) -> {
+                                if (payloadMap != null && !cleanPhone.isEmpty() && city != null) {
+                                    firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(payloadMap)
+                                            .addOnSuccessListener(aVoid -> {
+                                                firestore.collection("moderation_requests").document(reqId).update("status", "APPROVED");
+                                                Toast.makeText(MainActivity.this, "Request approved and published!", Toast.LENGTH_SHORT).show();
+                                                checkPendingModerationRequests();
+                                            });
+                                }
+                            })
+                            .setNegativeButton("Reject", (d, w) -> {
+                                firestore.collection("moderation_requests").document(reqId).update("status", "REJECTED");
+                                Toast.makeText(MainActivity.this, "Request rejected.", Toast.LENGTH_SHORT).show();
+                                checkPendingModerationRequests();
+                            })
+                            .setNeutralButton("Cancel", null)
+                            .show();
+                })
+                .setNegativeButton("Close", null)
                 .show();
     }
 
