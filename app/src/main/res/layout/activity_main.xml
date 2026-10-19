@@ -70,7 +70,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Cloud Import"
+                    android:contentDescription="@string/content_desc_cloud_import"
                     android:padding="9dp"
                     android:src="@drawable/ic_cloud_download"
                     app:tint="@color/accent_blue" />
@@ -82,7 +82,7 @@
                     android:layout_height="42dp"
                     android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Logout"
+                    android:contentDescription="@string/content_desc_logout"
                     android:padding="9dp"
                     android:src="@drawable/ic_logout"
                     app:tint="@color/text_secondary" />
@@ -94,7 +94,7 @@
                     android:layout_height="42dp"
                     android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="About Info"
+                    android:contentDescription="@string/content_desc_about"
                     android:padding="9dp"
                     android:src="@drawable/ic_info"
                     app:tint="@color/text_secondary" />

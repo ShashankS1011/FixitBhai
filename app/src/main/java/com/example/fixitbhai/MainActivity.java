@@ -58,6 +58,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -198,11 +201,12 @@ public class MainActivity extends AppCompatActivity {
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getBindingAdapterPosition();
                 if (position == RecyclerView.NO_POSITION) return;
-                Contact deletedContact = contactList.get(position);
+                Contact deletedContact = adapter.getContactAt(position);
+                if (deletedContact == null) return;
 
-                // Remove from UI
-                contactList.remove(position);
-                adapter.notifyItemRemoved(position);
+                // Remove from UI and adapter list
+                adapter.removeContact(position);
+                contactList.remove(deletedContact);
 
                 // Remove from local database
                 dbHelper.deleteContact(deletedContact.getPhone());
@@ -852,7 +856,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Permission denied. Local contacts skipped.", Toast.LENGTH_SHORT).show();
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
                 refreshCategoryChips();
-                adapter.filterBy("", selectedCity);
+                adapter.filterBy("", getFilterCity());
                 checkEmptyState();
             }
         }
@@ -900,14 +904,14 @@ public class MainActivity extends AppCompatActivity {
         allChip.setText("All");
         allChip.setCheckable(true);
         allChip.setChecked(true);
-        allChip.setOnClickListener(v -> adapter.filterBy("", selectedCity));
+        allChip.setOnClickListener(v -> adapter.filterBy("", getFilterCity()));
         chipGroupCategories.addView(allChip);
 
         Chip emergencyChip = new Chip(this);
         emergencyChip.setText("24/7 Emergency");
         emergencyChip.setCheckable(true);
         emergencyChip.setChipIconResource(R.drawable.ic_info);
-        emergencyChip.setOnClickListener(v -> adapter.filterBy("24/7 Emergency", selectedCity));
+        emergencyChip.setOnClickListener(v -> adapter.filterBy("24/7 Emergency", getFilterCity()));
         chipGroupCategories.addView(emergencyChip);
 
         Set<String> categories = new LinkedHashSet<>();
@@ -979,6 +983,26 @@ public class MainActivity extends AppCompatActivity {
                     "niece", "nephew", "stepdad", "stepmom", "amma", "appa", "baba", "anna", "chechi", "chettan", "akka", "thambi", "macha", "machan"
             };
 
+            String[] majorCities = {
+                    "Gurgaon", "Gurugram", "Noida", "Greater Noida", "Ghaziabad", "Faridabad",
+                    "Mathura", "Delhi", "New Delhi", "Prayagraj", "Allahabad", "Chennai",
+                    "Lucknow", "Mumbai", "Bengaluru", "Bangalore", "Hyderabad", "Kolkata",
+                    "Pune", "Ahmedabad", "Jaipur", "Kanpur", "Varanasi", "Chandigarh",
+                    "Indore", "Bhopal", "Patna", "Ranchi", "Surat", "Vadodara",
+                    "Coimbatore", "Kochi", "Trivandrum", "Visakhapatnam", "Agra", "Meerut"
+            };
+
+            // Pre-compile Regex Patterns once to optimize phonebook scanning speed
+            Map<String, Pattern> compiledKeywords = new LinkedHashMap<>();
+            for (String keyword : serviceKeywords) {
+                compiledKeywords.put(keyword, Pattern.compile("(?i).*\\b" + Pattern.quote(keyword) + "\\b.*"));
+            }
+
+            Map<String, Pattern> compiledCities = new LinkedHashMap<>();
+            for (String knownCity : majorCities) {
+                compiledCities.put(knownCity, Pattern.compile("(?i).*\\b" + Pattern.quote(knownCity) + "\\b.*"));
+            }
+
             Set<String> existingNumbers = new HashSet<>();
             Set<String> existingNames = new HashSet<>();
             for (Contact contact : contactList) {
@@ -1015,9 +1039,9 @@ public class MainActivity extends AppCompatActivity {
                     if (isRelative) continue;
 
                     String matchedCategory = null;
-                    for (String keyword : serviceKeywords) {
-                        String regex = "(?i).*\\b" + Pattern.quote(keyword) + "\\b.*";
-                        if (lowerName.matches(regex)) {
+                    for (Map.Entry<String, Pattern> entry : compiledKeywords.entrySet()) {
+                        if (entry.getValue().matcher(lowerName).matches()) {
+                            String keyword = entry.getKey();
                             if (keyword.equalsIgnoreCase("ac") || keyword.equalsIgnoreCase("ac repair") || keyword.equalsIgnoreCase("ac service")) {
                                 matchedCategory = "AC Repair";
                             } else if (keyword.equalsIgnoreCase("ro") || keyword.equalsIgnoreCase("ro repair") || keyword.equalsIgnoreCase("ro service")) {
@@ -1031,50 +1055,41 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-            String[] majorCities = {
-                    "Gurgaon", "Gurugram", "Noida", "Greater Noida", "Ghaziabad", "Faridabad",
-                    "Mathura", "Delhi", "New Delhi", "Prayagraj", "Allahabad", "Chennai",
-                    "Lucknow", "Mumbai", "Bengaluru", "Bangalore", "Hyderabad", "Kolkata",
-                    "Pune", "Ahmedabad", "Jaipur", "Kanpur", "Varanasi", "Chandigarh",
-                    "Indore", "Bhopal", "Patna", "Ranchi", "Surat", "Vadodara",
-                    "Coimbatore", "Kochi", "Trivandrum", "Visakhapatnam", "Agra", "Meerut"
-            };
-
-            if (matchedCategory != null) {
-                String detectedCity = (selectedCity == null || selectedCity.equalsIgnoreCase("All Cities")) ? "Prayagraj" : selectedCity;
-                for (String knownCity : majorCities) {
-                    String cityRegex = "(?i).*\\b" + Pattern.quote(knownCity) + "\\b.*";
-                    if (lowerName.matches(cityRegex)) {
-                        if (knownCity.equalsIgnoreCase("Bangalore")) {
-                            detectedCity = "Bengaluru";
-                        } else if (knownCity.equalsIgnoreCase("New Delhi")) {
-                            detectedCity = "Delhi";
-                        } else if (knownCity.equalsIgnoreCase("Gurugram")) {
-                            detectedCity = "Gurgaon";
-                        } else {
-                            detectedCity = capitalizeWords(knownCity);
+                    if (matchedCategory != null) {
+                        String detectedCity = "General";
+                        for (Map.Entry<String, Pattern> entry : compiledCities.entrySet()) {
+                            if (entry.getValue().matcher(lowerName).matches()) {
+                                String knownCity = entry.getKey();
+                                if (knownCity.equalsIgnoreCase("Bangalore")) {
+                                    detectedCity = "Bengaluru";
+                                } else if (knownCity.equalsIgnoreCase("New Delhi")) {
+                                    detectedCity = "Delhi";
+                                } else if (knownCity.equalsIgnoreCase("Gurugram")) {
+                                    detectedCity = "Gurgaon";
+                                } else {
+                                    detectedCity = capitalizeWords(knownCity);
+                                }
+                                break;
+                            }
                         }
-                        break;
+
+                        Contact newContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
+                        existingNumbers.add(formattedNumber);
+                        existingNames.add(lowerName);
+                        importedCount++;
+
+                        dbHelper.addContact(newContact);
+                        if (shouldSyncCloud && currentUserId != null) {
+                            newContact.setCloud(true);
+                            String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
+                            newContact.setUploadedBy(uploaderEmail);
+                            newContact.setUploaderUid(currentUserId);
+                            newContact.setVerified(true);
+                            String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
+                            firestore.collection("cities").document(detectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                            firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                        }
                     }
-                }
-
-                Contact newContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
-                existingNumbers.add(formattedNumber);
-                existingNames.add(lowerName);
-                importedCount++;
-
-                dbHelper.addContact(newContact);
-                if (shouldSyncCloud && currentUserId != null) {
-                    newContact.setCloud(true);
-                    String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
-                    newContact.setUploadedBy(uploaderEmail);
-                    newContact.setUploaderUid(currentUserId);
-                    newContact.setVerified(true);
-                    String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
-                    firestore.collection("cities").document(detectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
-                    firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
-                }
-            }
                 }
                 cursor.close();
             }

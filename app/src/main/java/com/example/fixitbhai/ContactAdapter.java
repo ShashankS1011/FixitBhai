@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
@@ -26,15 +27,15 @@ import java.util.List;
 
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> implements Filterable {
 
-    private final List<Contact> contactList;
+    private final List<Contact> contactListFiltered;
     private List<Contact> contactListFull;
 
     private String currentCategoryFilter = "";
     private String currentCityFilter = "";
 
     public ContactAdapter(List<Contact> contactList) {
-        this.contactList = contactList;
         this.contactListFull = new ArrayList<>(contactList);
+        this.contactListFiltered = new ArrayList<>(contactList);
     }
 
     public static boolean isAdminEmail(String email) {
@@ -52,7 +53,8 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     @Override
     public void onBindViewHolder(@NonNull ContactViewHolder holder, int position) {
-        Contact contact = contactList.get(position);
+        if (position < 0 || position >= contactListFiltered.size()) return;
+        Contact contact = contactListFiltered.get(position);
         Context context = holder.itemView.getContext();
 
         holder.tvName.setText(contact.getName());
@@ -247,7 +249,22 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     @Override
     public int getItemCount() {
-        return contactList.size();
+        return contactListFiltered.size();
+    }
+
+    public Contact getContactAt(int position) {
+        if (position >= 0 && position < contactListFiltered.size()) {
+            return contactListFiltered.get(position);
+        }
+        return null;
+    }
+
+    public void removeContact(int position) {
+        if (position >= 0 && position < contactListFiltered.size()) {
+            Contact removed = contactListFiltered.remove(position);
+            contactListFull.remove(removed);
+            notifyItemRemoved(position);
+        }
     }
 
     public void updateData(List<Contact> newList) {
@@ -301,11 +318,41 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         @Override
         @SuppressWarnings("unchecked")
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            contactList.clear();
-            if (results.values != null) {
-                contactList.addAll((List<Contact>) results.values);
-            }
-            notifyDataSetChanged();
+            List<Contact> newList = (results.values != null) ? (List<Contact>) results.values : new ArrayList<>();
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+                @Override
+                public int getOldListSize() {
+                    return contactListFiltered.size();
+                }
+
+                @Override
+                public int getNewListSize() {
+                    return newList.size();
+                }
+
+                @Override
+                public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                    Contact oldItem = contactListFiltered.get(oldItemPosition);
+                    Contact newItem = newList.get(newItemPosition);
+                    return oldItem.getPhone() != null && oldItem.getPhone().equals(newItem.getPhone());
+                }
+
+                @Override
+                public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                    Contact oldItem = contactListFiltered.get(oldItemPosition);
+                    Contact newItem = newList.get(newItemPosition);
+                    return String.valueOf(oldItem.getName()).equals(String.valueOf(newItem.getName()))
+                            && String.valueOf(oldItem.getCity()).equals(String.valueOf(newItem.getCity()))
+                            && String.valueOf(oldItem.getCategory()).equals(String.valueOf(newItem.getCategory()))
+                            && oldItem.isCloud() == newItem.isCloud()
+                            && oldItem.isEmergency() == newItem.isEmergency()
+                            && oldItem.isDoNotCall() == newItem.isDoNotCall();
+                }
+            });
+
+            contactListFiltered.clear();
+            contactListFiltered.addAll(newList);
+            diffResult.dispatchUpdatesTo(ContactAdapter.this);
         }
     };
 

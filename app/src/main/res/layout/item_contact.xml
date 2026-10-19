@@ -34,7 +34,7 @@
         <!-- Contact Information Column -->
         <LinearLayout
             android:id="@+id/infoContainer"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginStart="14dp"
@@ -44,7 +44,7 @@
 
             <TextView
                 android:id="@+id/tvName"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
@@ -55,7 +55,7 @@
 
             <TextView
                 android:id="@+id/tvCategoryCity"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
@@ -67,7 +67,7 @@
 
             <TextView
                 android:id="@+id/tvPhone"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="+91 98765 43210"
@@ -76,7 +76,7 @@
 
             <TextView
                 android:id="@+id/tvUploader"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"

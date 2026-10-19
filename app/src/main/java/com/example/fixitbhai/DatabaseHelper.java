@@ -47,6 +47,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0,"
                 + KEY_REVIEW_TAGS + " TEXT DEFAULT ''" + ")";
         db.execSQL(CREATE_CONTACTS_TABLE);
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_city_cat ON " + TABLE_CONTACTS + "(" + KEY_CITY + ", " + KEY_CATEGORY + ")");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_phone ON " + TABLE_CONTACTS + "(" + KEY_PHONE + ")");
     }
 
     @Override
@@ -67,6 +69,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0");
                 db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN " + KEY_REVIEW_TAGS + " TEXT DEFAULT ''");
             }
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_city_cat ON " + TABLE_CONTACTS + "(" + KEY_CITY + ", " + KEY_CATEGORY + ")");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_phone ON " + TABLE_CONTACTS + "(" + KEY_PHONE + ")");
         } catch (Exception ignored) {}
     }
 

@@ -31,7 +31,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.List;
-import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -46,7 +45,6 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private GoogleSignInClient mGoogleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
-    private ActivityResultLauncher<Intent> basicGoogleSignInLauncher;
 
     private boolean isRegistrationMode = false;
 
@@ -88,40 +86,21 @@ public class LoginActivity extends AppCompatActivity {
                             GoogleSignInAccount account = task.getResult(ApiException.class);
                             if (account != null) {
                                 String idToken = account.getIdToken();
-                                updateGoogleDisplayName(account);
-                                if (idToken != null) {
+                                String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
+                                if (idToken != null && !idToken.isEmpty()) {
                                     AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-                                    signInWithFirebaseCredential(credential);
+                                    signInWithFirebaseCredential(credential, displayName);
                                 } else if (account.getEmail() != null) {
-                                    signInWithGoogleEmail(account.getEmail(), account.getId());
+                                    handleGoogleAccountDirectly(account);
                                 }
                             }
                         } catch (ApiException e) {
                             Log.e(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
+                            String errorMsg = "Google Sign-In Error (" + e.getStatusCode() + ").";
                             if (e.getStatusCode() == 10 || e.getStatusCode() == 12500) {
-                                Log.i(TAG, "SHA-1 / Developer Error detected. Triggering basic Google Sign-In fallback...");
-                                performBasicGoogleSignIn();
-                            } else {
-                                Toast.makeText(LoginActivity.this, "Google Sign-In Error (" + e.getStatusCode() + "): " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                errorMsg = "Google Sign-In Configuration Error (SHA-1/Web Client ID mismatch in Firebase). Please sign in using Email/Password.";
                             }
-                        }
-                    }
-                });
-
-        basicGoogleSignInLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getData() != null) {
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                        try {
-                            GoogleSignInAccount account = task.getResult(ApiException.class);
-                            if (account != null && account.getEmail() != null) {
-                                updateGoogleDisplayName(account);
-                                signInWithGoogleEmail(account.getEmail(), account.getId());
-                            }
-                        } catch (ApiException e) {
-                            Log.e(TAG, "Basic Google Sign-In Error Code: " + e.getStatusCode(), e);
-                            Toast.makeText(LoginActivity.this, "Google Sign-In Error: Please use Email/Password Sign In.", Toast.LENGTH_LONG).show();
+                            Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                         }
                     }
                 });
@@ -131,12 +110,12 @@ public class LoginActivity extends AppCompatActivity {
         btnGoogleSignIn.setOnClickListener(v -> performGoogleSignIn());
     }
 
-    private void updateGoogleDisplayName(GoogleSignInAccount account) {
-        if (account != null && account.getDisplayName() != null && !account.getDisplayName().trim().isEmpty()) {
+    private void updateGoogleDisplayName(String displayName) {
+        if (displayName != null && !displayName.trim().isEmpty()) {
             FirebaseUser currentUser = mAuth.getCurrentUser();
             if (currentUser != null) {
                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                        .setDisplayName(account.getDisplayName().trim())
+                        .setDisplayName(displayName.trim())
                         .build();
                 currentUser.updateProfile(profileUpdates);
             }
@@ -178,23 +157,23 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void performEmailAuth() {
-        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
-        String password = Objects.requireNonNull(etPassword.getText()).toString().trim();
+        String email = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        String password = etPassword != null && etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
         String fullName = etFullName != null && etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Enter a valid email address");
+            if (etEmail != null) etEmail.setError("Enter a valid email address");
             return;
         }
 
         if (TextUtils.isEmpty(password) || password.length() < 6) {
-            etPassword.setError("Password must be at least 6 characters");
+            if (etPassword != null) etPassword.setError("Password must be at least 6 characters");
             return;
         }
 
         if (isRegistrationMode) {
             if (TextUtils.isEmpty(fullName)) {
-                if (etFullName != null) etFullName.setError("Please enter your name");
+                if (etFullName != null) etFullName.setError("Please enter your full name");
                 return;
             }
             Toast.makeText(this, "Creating account...", Toast.LENGTH_SHORT).show();
@@ -206,13 +185,16 @@ public class LoginActivity extends AppCompatActivity {
                                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                         .setDisplayName(fullName)
                                         .build();
-                                user.updateProfile(profileUpdates);
+                                user.updateProfile(profileUpdates).addOnCompleteListener(uTask -> {
+                                    Toast.makeText(LoginActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
+                                    restoreUserCloudBackupAndNavigate();
+                                });
+                            } else {
+                                restoreUserCloudBackupAndNavigate();
                             }
-                            Toast.makeText(LoginActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
-                            restoreUserCloudBackupAndNavigate();
                         } else {
                             String err = task.getException() != null ? task.getException().getMessage() : "Registration failed";
-                            Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                            Toast.makeText(LoginActivity.this, "Registration Error: " + err, Toast.LENGTH_LONG).show();
                         }
                     });
         } else {
@@ -224,33 +206,27 @@ public class LoginActivity extends AppCompatActivity {
                             restoreUserCloudBackupAndNavigate();
                         } else {
                             String err = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
-                            Toast.makeText(LoginActivity.this, "Error: " + err, Toast.LENGTH_LONG).show();
+                            Toast.makeText(LoginActivity.this, "Sign-In Error: " + err, Toast.LENGTH_LONG).show();
                         }
                     });
         }
     }
 
     private void performGoogleSignIn() {
-        Toast.makeText(this, "Opening Google Account Picker...", Toast.LENGTH_SHORT).show();
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        googleSignInLauncher.launch(signInIntent);
+        if (mGoogleSignInClient != null) {
+            Toast.makeText(this, "Opening Google Account Picker...", Toast.LENGTH_SHORT).show();
+            mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
+                Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+                googleSignInLauncher.launch(signInIntent);
+            });
+        }
     }
 
-    private void performBasicGoogleSignIn() {
-        GoogleSignInOptions basicGso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
-        GoogleSignInClient basicClient = GoogleSignIn.getClient(this, basicGso);
-        basicClient.signOut().addOnCompleteListener(task -> {
-            Intent intent = basicClient.getSignInIntent();
-            basicGoogleSignInLauncher.launch(intent);
-        });
-    }
-
-    private void signInWithFirebaseCredential(AuthCredential credential) {
+    private void signInWithFirebaseCredential(AuthCredential credential, String displayName) {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
+                        updateGoogleDisplayName(displayName);
                         Toast.makeText(LoginActivity.this, "Google Sign In Successful!", Toast.LENGTH_SHORT).show();
                         restoreUserCloudBackupAndNavigate();
                     } else {
@@ -260,17 +236,27 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void signInWithGoogleEmail(String email, String googleId) {
-        Toast.makeText(this, "Signed in with Google: " + email, Toast.LENGTH_SHORT).show();
-        String pass = "GooglePass_" + (googleId != null ? googleId : "Account");
+    private void handleGoogleAccountDirectly(GoogleSignInAccount account) {
+        if (account == null || account.getEmail() == null) return;
+        String email = account.getEmail().trim();
+        String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
+
+        String pass = "GoogleAuth_" + Math.abs(email.hashCode());
         mAuth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
+                        updateGoogleDisplayName(displayName);
                         restoreUserCloudBackupAndNavigate();
                     } else {
                         mAuth.createUserWithEmailAndPassword(email, pass)
                                 .addOnCompleteListener(this, createTask -> {
-                                    restoreUserCloudBackupAndNavigate();
+                                    if (createTask.isSuccessful()) {
+                                        updateGoogleDisplayName(displayName);
+                                        restoreUserCloudBackupAndNavigate();
+                                    } else {
+                                        Toast.makeText(LoginActivity.this, "Signed in with Google: " + email, Toast.LENGTH_SHORT).show();
+                                        if (etEmail != null) etEmail.setText(email);
+                                    }
                                 });
                     }
                 });

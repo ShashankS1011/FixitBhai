@@ -49,4 +49,45 @@ public class ContactServiceFilterTest {
         assertTrue(emergencyPlumber.getReviewTags().contains("24/7"));
         assertFalse(regularMechanic.isEmergency());
     }
+
+    @Test
+    public void testCityFilteringLogic() {
+        Contact chennaiContact = new Contact("Suresh Plumber", "9876543210", "Plumber", "Chennai", false);
+        Contact gurgaonContact = new Contact("Ramesh Electrician", "9876543211", "Electrician", "Gurgaon", false);
+        Contact generalContact = new Contact("Local Technician", "9876543212", "AC Repair", "General", false);
+
+        List<Contact> allContacts = new ArrayList<>();
+        allContacts.add(chennaiContact);
+        allContacts.add(gurgaonContact);
+        allContacts.add(generalContact);
+
+        // Test filtering for "Gurgaon"
+        List<Contact> gurgaonFiltered = filterByCity(allContacts, "Gurgaon");
+        assertEquals(1, gurgaonFiltered.size());
+        assertEquals("Gurgaon", gurgaonFiltered.get(0).getCity());
+
+        // Test filtering for "Chennai"
+        List<Contact> chennaiFiltered = filterByCity(allContacts, "Chennai");
+        assertEquals(1, chennaiFiltered.size());
+        assertEquals("Chennai", chennaiFiltered.get(0).getCity());
+
+        // Test filtering for "All Cities" (empty filter)
+        List<Contact> allFiltered = filterByCity(allContacts, "");
+        assertEquals(3, allFiltered.size());
+    }
+
+    private List<Contact> filterByCity(List<Contact> list, String cityFilter) {
+        List<Contact> result = new ArrayList<>();
+        String filter = cityFilter != null ? cityFilter.trim().toLowerCase() : "";
+        for (Contact item : list) {
+            boolean matchesCity = filter.isEmpty()
+                    || filter.equalsIgnoreCase("all")
+                    || filter.equalsIgnoreCase("all cities")
+                    || (item.getCity() != null && item.getCity().equalsIgnoreCase(filter));
+            if (matchesCity) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
 }

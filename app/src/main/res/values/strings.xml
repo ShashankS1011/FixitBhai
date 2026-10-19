@@ -25,5 +25,12 @@
     <string name="badge_local">Local</string>
     <string name="search_hint">Search name, phone, service, or notes&#8230;</string>
     <string name="btn_whatsapp">WhatsApp Contact</string>
+    <string name="content_desc_cloud_import">Cloud Expert Directory Import</string>
+    <string name="content_desc_logout">Logout Account</string>
+    <string name="content_desc_about">About App Info</string>
+    <string name="content_desc_call">Call Contact</string>
+    <string name="content_desc_share">Share Contact Information</string>
+    <string name="dialog_city_title">City Selection</string>
+    <string name="dialog_add_custom_city">Add Custom City</string>
     <string name="default_web_client_id">150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com</string>
 </resources>

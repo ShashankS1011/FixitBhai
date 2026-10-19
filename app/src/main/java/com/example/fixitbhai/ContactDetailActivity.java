@@ -31,7 +31,8 @@ public class ContactDetailActivity extends AppCompatActivity {
     private String name = "";
     private String phone = "";
     private String category = "";
-    private String city = "Lucknow";
+    private String city = "General";
+    private String originalCity = "";
     private boolean isCloud = false; // Added to track cloud status
 
     private DatabaseHelper dbHelper;
@@ -90,7 +91,8 @@ public class ContactDetailActivity extends AppCompatActivity {
                 name = contact.getName() != null ? contact.getName() : "Unknown";
                 phone = contact.getPhone() != null ? contact.getPhone() : "N/A";
                 category = contact.getCategory() != null ? contact.getCategory() : "General";
-                city = contact.getCity() != null ? contact.getCity() : "Prayagraj";
+                city = contact.getCity() != null ? contact.getCity() : "General";
+                originalCity = city;
                 isCloud = contact.isCloud();
 
                 if (tvName != null) tvName.setText(name);
@@ -133,6 +135,7 @@ public class ContactDetailActivity extends AppCompatActivity {
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
         boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
+        String oldCity = originalCity;
         if (etCity != null && !etCity.getText().toString().trim().isEmpty()) {
             city = etCity.getText().toString().trim();
         }
@@ -154,6 +157,12 @@ public class ContactDetailActivity extends AppCompatActivity {
             updatedContact.setVerified(true);
 
             String cleanPhone = phone.replaceAll("[^0-9+]", "");
+
+            // If city was edited, delete old document from Firestore city directory
+            if (oldCity != null && !oldCity.isEmpty() && !oldCity.equalsIgnoreCase(city)) {
+                firestore.collection("cities").document(oldCity).collection("contacts").document(cleanPhone).delete();
+            }
+
             firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
             firestore.collection("users").document(user.getUid()).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
         }

@@ -99,7 +99,7 @@ public class Contact implements Serializable {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
-    public String getCity() { return city != null ? city : "Prayagraj"; }
+    public String getCity() { return (city != null && !city.trim().isEmpty()) ? city.trim() : "General"; }
     public void setCity(String city) { this.city = city; }
 
     public float getRating() { return rating; }
