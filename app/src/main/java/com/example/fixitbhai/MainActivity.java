@@ -239,6 +239,9 @@ public class MainActivity extends AppCompatActivity {
         // Silent background update check against GitHub Releases API
         UpdateChecker.checkForUpdates(this, false, null);
 
+        // Check and display post-update confirmation banner
+        checkPostUpdateBanner();
+
         if (btnAbout != null) btnAbout.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, AboutActivity.class)));
         if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
@@ -262,6 +265,26 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         checkEmptyState();
+    }
+
+    private void checkPostUpdateBanner() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String lastSeenVersion = prefs.getString("KEY_LAST_SEEN_VERSION", "");
+        String currentVersion = BuildConfig.VERSION_NAME;
+
+        if (!lastSeenVersion.isEmpty() && !lastSeenVersion.equals(currentVersion)) {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String userAccount = (currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty())
+                    ? currentUser.getEmail()
+                    : "your account";
+
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("App Updated Successfully! 🎉")
+                    .setMessage("FixitBhai has been updated to v" + currentVersion + ".\n\nYou are automatically logged in as " + userAccount + ".")
+                    .setPositiveButton("Awesome!", (dialog, which) -> dialog.dismiss())
+                    .show();
+        }
+        prefs.edit().putString("KEY_LAST_SEEN_VERSION", currentVersion).apply();
     }
 
     private String getFilterCity() {
