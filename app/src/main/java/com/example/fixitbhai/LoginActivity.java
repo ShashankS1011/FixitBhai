@@ -418,26 +418,22 @@ public class LoginActivity extends AppCompatActivity {
         for (Contact c : localContacts) {
             String phone = c.getPhone();
             if (phone == null || phone.trim().isEmpty()) continue;
-            c.setUploadedBy(uploaderText);
-            c.setUploaderUid(uid);
-            c.setVerified(true);
 
             String docKey = phone.trim().replaceAll("[^0-9+]", "");
-            String city = c.getCity() != null && !c.getCity().trim().isEmpty() ? c.getCity().trim() : "Prayagraj";
+            String city = c.getCity() != null && !c.getCity().trim().isEmpty() ? c.getCity().trim() : "General";
 
-            // Create a payload copy with isCloud = true for the cloud directory
-            Contact cloudPayload = new Contact(c.getName(), c.getPhone(), c.getCategory(), city, true);
-            cloudPayload.setRating(c.getRating());
-            cloudPayload.setNotes(c.getNotes());
-            cloudPayload.setDoNotCall(c.isDoNotCall());
-            cloudPayload.setEmergency(c.isEmergency());
-            cloudPayload.setReviewTags(c.getReviewTags());
-            cloudPayload.setUploadedBy(uploaderText);
-            cloudPayload.setUploaderUid(uid);
-            cloudPayload.setVerified(true);
+            // Backup payload to personal user collection, preserving contact's original local vs cloud state
+            Contact backupPayload = new Contact(c.getName(), c.getPhone(), c.getCategory(), city, c.isCloud());
+            backupPayload.setRating(c.getRating());
+            backupPayload.setNotes(c.getNotes());
+            backupPayload.setDoNotCall(c.isDoNotCall());
+            backupPayload.setEmergency(c.isEmergency());
+            backupPayload.setReviewTags(c.getReviewTags());
+            backupPayload.setUploadedBy(uploaderText);
+            backupPayload.setUploaderUid(uid);
+            backupPayload.setVerified(true);
 
-            batch.set(firestore.collection("cities").document(city).collection("contacts").document(docKey), cloudPayload.toMap());
-            batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), cloudPayload.toMap());
+            batch.set(firestore.collection("users").document(uid).collection("contacts").document(docKey), backupPayload.toMap());
         }
         batch.commit();
     }

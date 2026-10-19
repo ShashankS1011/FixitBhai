@@ -723,7 +723,6 @@ public class MainActivity extends AppCompatActivity {
                     for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots) {
                         Contact contact = doc.toObject(Contact.class);
                         if (contact != null && contact.getPhone() != null) {
-                            contact.setCloud(true);
                             if (!dbHelper.contactExists(contact.getPhone())) {
                                 dbHelper.addContact(contact);
                                 restoredAny = true;
@@ -1080,14 +1079,13 @@ public class MainActivity extends AppCompatActivity {
 
                         dbHelper.addContact(newContact);
                         if (shouldSyncCloud && currentUserId != null) {
-                            newContact.setCloud(true);
                             String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
-                            newContact.setUploadedBy(uploaderEmail);
-                            newContact.setUploaderUid(currentUserId);
-                            newContact.setVerified(true);
+                            Contact backupContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
+                            backupContact.setUploadedBy(uploaderEmail);
+                            backupContact.setUploaderUid(currentUserId);
+                            backupContact.setVerified(true);
                             String cleanDocKey = formattedNumber.replaceAll("[^0-9+]", "");
-                            firestore.collection("cities").document(detectedCity).collection("contacts").document(cleanDocKey).set(newContact.toMap());
-                            firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(newContact.toMap());
+                            firestore.collection("users").document(currentUserId).collection("contacts").document(cleanDocKey).set(backupContact.toMap());
                         }
                     }
                 }
