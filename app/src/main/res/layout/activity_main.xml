@@ -230,13 +230,13 @@
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/btnFabHelp"
+        android:id="@+id/btnFeedback"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
-        android:contentDescription="Help &amp; FAQ"
-        android:src="@drawable/ic_help"
+        android:contentDescription="Submit Feedback &amp; Report Issue"
+        android:src="@drawable/ic_info"
         app:backgroundTint="@color/primary_blue"
         app:tint="@color/text_primary" />
 

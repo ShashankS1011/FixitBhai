@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREFS_NAME = "FixitBhaiPrefs";
     private static final String KEY_CONTACT_LIST = "SavedContacts";
     private static final String KEY_SELECTED_CITY = "SelectedCity";
+    private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues/new";
     public static final String KEY_CLOUD_SYNC_PREF = "CloudSyncEnabled";
     public static final String KEY_PREF_SET = "CloudSyncPrefSet";
     private static final int PERMISSION_REQUEST_READ_CONTACTS = 100;
@@ -117,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnLogout = findViewById(R.id.btnLogout);
         ImageButton btnCloudSync = findViewById(R.id.btnCloudSync);
         ImageButton btnHelp = findViewById(R.id.btnHelp);
-        FloatingActionButton btnFabHelp = findViewById(R.id.btnFabHelp);
+        FloatingActionButton btnFeedback = findViewById(R.id.btnFeedback);
 
         recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
         contactList = new ArrayList<>();
@@ -246,7 +247,14 @@ public class MainActivity extends AppCompatActivity {
         if (btnLogout != null) btnLogout.setOnClickListener(v -> logoutUser());
         if (btnCloudSync != null) btnCloudSync.setOnClickListener(v -> showCloudContactPicker());
         if (btnHelp != null) btnHelp.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HelpActivity.class)));
-        if (btnFabHelp != null) btnFabHelp.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, HelpActivity.class)));
+        if (btnFeedback != null) {
+            btnFeedback.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(ISSUES_URL));
+                    startActivity(intent);
+                } catch (Exception ignored) {}
+            });
+        }
     }
 
     @Override
