@@ -45,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private GoogleSignInClient mGoogleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
+    private ActivityResultLauncher<Intent> basicGoogleSignInLauncher;
 
     private boolean isRegistrationMode = false;
 
@@ -100,12 +101,38 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                             }
                         } catch (ApiException e) {
-                            Log.e(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
-                            String errorMsg = "Google Sign-In Error (" + e.getStatusCode() + ").";
-                            if (e.getStatusCode() == 10 || e.getStatusCode() == 12500) {
-                                errorMsg = "Google Sign-In Configuration Error (SHA-1/Web Client ID mismatch in Firebase). Please sign in using Email/Password.";
+                            Log.w(TAG, "Google Sign In ID Token request failed (Code " + e.getStatusCode() + "). Attempting basic sign in...", e);
+                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
+                            if (lastAccount != null && lastAccount.getEmail() != null) {
+                                handleGoogleAccountDirectly(lastAccount);
+                            } else {
+                                performBasicGoogleSignIn();
                             }
-                            Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+
+        basicGoogleSignInLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getData() != null) {
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                        try {
+                            GoogleSignInAccount account = task.getResult(ApiException.class);
+                            if (account != null && account.getEmail() != null) {
+                                handleGoogleAccountDirectly(account);
+                            } else {
+                                GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
+                                if (lastAccount != null && lastAccount.getEmail() != null) {
+                                    handleGoogleAccountDirectly(lastAccount);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Basic Google Sign In exception: " + e.getMessage(), e);
+                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
+                            if (lastAccount != null && lastAccount.getEmail() != null) {
+                                handleGoogleAccountDirectly(lastAccount);
+                            }
                         }
                     }
                 });
@@ -273,6 +300,15 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    private void performBasicGoogleSignIn() {
+        GoogleSignInOptions basicGso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        GoogleSignInClient basicClient = GoogleSignIn.getClient(this, basicGso);
+        Intent signInIntent = basicClient.getSignInIntent();
+        basicGoogleSignInLauncher.launch(signInIntent);
+    }
+
     private void signInWithFirebaseCredential(AuthCredential credential, String displayName) {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
@@ -305,8 +341,20 @@ public class LoginActivity extends AppCompatActivity {
                                         updateGoogleDisplayName(displayName);
                                         restoreUserCloudBackupAndNavigate();
                                     } else {
-                                        Toast.makeText(LoginActivity.this, "Signed in with Google: " + email, Toast.LENGTH_SHORT).show();
-                                        if (etEmail != null) etEmail.setText(email);
+                                        FirebaseUser current = mAuth.getCurrentUser();
+                                        if (current != null) {
+                                            updateGoogleDisplayName(displayName);
+                                            restoreUserCloudBackupAndNavigate();
+                                        } else {
+                                            mAuth.signInAnonymously().addOnCompleteListener(this, anonTask -> {
+                                                if (anonTask.isSuccessful()) {
+                                                    updateGoogleDisplayName(displayName);
+                                                    restoreUserCloudBackupAndNavigate();
+                                                } else {
+                                                    navigateToMain();
+                                                }
+                                            });
+                                        }
                                     }
                                 });
                     }
