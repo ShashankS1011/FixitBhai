@@ -19,6 +19,9 @@
         <item name="colorSurfaceVariant">@color/surface_container</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
 
+        <!-- Disable Material 3 Elevation Overlay Color Shifts on Scroll -->
+        <item name="elevationOverlayEnabled">false</item>
+
         <!-- System Bar Styling -->
         <item name="android:statusBarColor">@color/bg_dark</item>
         <item name="android:navigationBarColor">@color/bg_dark</item>
