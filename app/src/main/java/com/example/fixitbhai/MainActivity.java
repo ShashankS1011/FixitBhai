@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // Sort cloud contacts alphabetically by name
-            Collections.sort(cloudContacts, (c1, c2) -> {
+            cloudContacts.sort((c1, c2) -> {
                 String n1 = c1.getName() != null ? c1.getName() : "";
                 String n2 = c2.getName() != null ? c2.getName() : "";
                 return n1.compareToIgnoreCase(n2);

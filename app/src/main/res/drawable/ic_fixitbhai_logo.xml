@@ -1,37 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="120dp"
-    android:height="120dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
 
-    <!-- Outer Hexagon Base -->
-    <path
-        android:fillColor="#0F172A"
-        android:pathData="M12,1.5 L21.1,6.8 V17.2 L12,22.5 L2.9,17.2 V6.8 Z" />
-
-    <!-- Outer Electric Blue Border Accent -->
+    <!-- Outer Electric Blue Hexagon Accent Frame -->
     <path
         android:fillColor="#0F62FE"
-        android:pathData="M12,3 L19.6,7.4 V16.6 L12,21 L4.4,16.6 V7.4 Z" />
+        android:pathData="M54,18 L82,34.1 V66.3 L54,82.4 L26,66.3 V34.1 Z" />
 
-    <!-- Inner Dark Slate Shield -->
+    <!-- Inner Dark Slate Shield Core -->
     <path
         android:fillColor="#1E293B"
-        android:pathData="M12,4.5 L18.1,8 V16 L12,19.5 L5.9,16 V8 Z" />
+        android:pathData="M54,22 L78,36 V64 L54,78 L30,64 V36 Z" />
 
-    <!-- Sharp Monogram 'F' + Integrated Wrench -->
+    <!-- Sharp Monogram 'F' with Wrench Feature -->
     <path
         android:fillColor="#F8FAFC"
-        android:pathData="M7.5,6.5 H16.5 V9.2 H10.5 V11.2 H15 V13.8 H10.5 V17.5 H7.5 Z" />
+        android:pathData="M38,32 H68 V41 H48 V47 H62 V56 H48 V68 H38 Z" />
 
-    <!-- Metallic Wrench Jaw Accent -->
+    <!-- Metallic Cyan Wrench Head Accent -->
     <path
         android:fillColor="#38BDF8"
-        android:pathData="M14.5,6.5 V9.2 H16.5 C16.5,7.8 15.6,6.5 14.5,6.5 Z" />
+        android:pathData="M62,32 V41 H68 C68,36 65,32 62,32 Z" />
 
-    <!-- Active Service Indicator Glow Dot -->
+    <!-- Active Service Availability Indicator Glow Dot -->
     <path
         android:fillColor="#10B981"
-        android:pathData="M16.5,15.5 A1.8,1.8 0 1,0 16.5,19.1 A1.8,1.8 0 1,0 16.5,15.5 Z" />
+        android:pathData="M68,60 A5,5 0 1,0 68,70 A5,5 0 1,0 68,60 Z" />
 </vector>
