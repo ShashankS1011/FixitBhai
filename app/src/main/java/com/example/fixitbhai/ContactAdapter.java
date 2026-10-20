@@ -305,8 +305,21 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         FirebaseFirestore.getInstance()
                 .collection("moderation_requests")
                 .add(requestMap)
-                .addOnSuccessListener(docRef -> Toast.makeText(context, "Moderation request submitted! Admin will review your submission.", Toast.LENGTH_LONG).show())
-                .addOnFailureListener(e -> Toast.makeText(context, "Request failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnSuccessListener(docRef -> {
+                    new MaterialAlertDialogBuilder(context)
+                            .setTitle("Request Submitted Successfully! 🎉")
+                            .setMessage("Your request to add " + contact.getName() + " to the " + city + " cloud directory has been submitted.\n\nIt is now waiting for admin approval.")
+                            .setPositiveButton("Got it", (d, w) -> d.dismiss())
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("ContactAdapter", "Moderation request submission failed", e);
+                    new MaterialAlertDialogBuilder(context)
+                            .setTitle("Submission Failed")
+                            .setMessage("Could not submit request: " + e.getMessage() + "\n\nPlease check your network connection or Firestore security rules.")
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
     }
 
     @Override
