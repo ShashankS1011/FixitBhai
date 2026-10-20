@@ -64,19 +64,6 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Admin Pending Moderation Button (Admin Only) -->
-                <ImageButton
-                    android:id="@+id/btnAdminPending"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Pending Admin Requests"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_info"
-                    android:visibility="gone"
-                    app:tint="#F59E0B" />
-
                 <!-- Help & FAQ Button -->
                 <ImageButton
                     android:id="@+id/btnHelp"
@@ -261,9 +248,23 @@
         android:layout_gravity="bottom|start"
         android:layout_margin="24dp"
         android:contentDescription="Admin Crash Reports"
-        android:src="@drawable/ic_delete"
+        android:src="@drawable/ic_bug"
         android:visibility="gone"
         app:backgroundTint="#7C3AED"
+        app:tint="@color/text_primary" />
+
+    <!-- Admin Pending Moderation FAB (Admin Only) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnAdminPending"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="92dp"
+        android:contentDescription="Pending Admin Requests"
+        android:src="@drawable/ic_info"
+        android:visibility="gone"
+        app:backgroundTint="#F59E0B"
         app:tint="@color/text_primary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

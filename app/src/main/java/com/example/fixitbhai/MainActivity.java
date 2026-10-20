@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private LinearLayout emptyStateLayout;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private ImageButton btnAdminPending;
+    private FloatingActionButton btnAdminPending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
