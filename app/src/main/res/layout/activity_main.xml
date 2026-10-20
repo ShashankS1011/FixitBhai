@@ -253,4 +253,17 @@
         app:backgroundTint="@color/primary_blue"
         app:tint="@color/text_primary" />
 
+    <!-- Admin Crash Logs FAB (Admin Only) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnFabCrashLogs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="24dp"
+        android:contentDescription="Admin Crash Reports"
+        android:src="@drawable/ic_delete"
+        android:visibility="gone"
+        app:backgroundTint="#7C3AED"
+        app:tint="@color/text_primary" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

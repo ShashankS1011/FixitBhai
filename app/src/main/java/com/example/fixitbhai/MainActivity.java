@@ -121,6 +121,13 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnCloudSync = findViewById(R.id.btnCloudSync);
         ImageButton btnHelp = findViewById(R.id.btnHelp);
         FloatingActionButton btnFeedback = findViewById(R.id.btnFeedback);
+        FloatingActionButton btnFabCrashLogs = findViewById(R.id.btnFabCrashLogs);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        boolean isAdmin = currentUser != null && currentUser.getEmail() != null && ContactAdapter.isAdminEmail(currentUser.getEmail());
+        if (isAdmin && btnFabCrashLogs != null) {
+            btnFabCrashLogs.setVisibility(View.VISIBLE);
+            btnFabCrashLogs.setOnClickListener(v -> showAdminCrashLogsDialog());
+        }
 
         recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
         contactList = new ArrayList<>();
@@ -307,6 +314,21 @@ public class MainActivity extends AppCompatActivity {
                     } catch (Exception ignored) {}
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void showAdminCrashLogsDialog() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String lastCrash = prefs.getString("KEY_LAST_CRASH_LOG", "No recent crashes recorded by Crashlytics.");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Admin Crash & Error Analytics")
+                .setMessage("Firebase Crashlytics Status: Active (Monitoring ANRs & Crashes)\n\nLast Logged Event / Exception:\n" + lastCrash + "\n\nWould you like to trigger a test crash to verify Crashlytics reporting?")
+                .setPositiveButton("Force Test Crash", (dialog, which) -> {
+                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("Admin triggered test crash from FixitBhai panel");
+                    throw new RuntimeException("Test Crash from Admin Panel");
+                })
+                .setNegativeButton("Close", null)
                 .show();
     }
 
