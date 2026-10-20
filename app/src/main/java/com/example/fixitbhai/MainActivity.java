@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private LinearLayout emptyStateLayout;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private ImageButton btnAdminPending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         emptyStateLayout = findViewById(R.id.emptyStateLayout);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        btnAdminPending = findViewById(R.id.btnAdminPending);
 
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setColorSchemeColors(ContextCompat.getColor(this, R.color.accent_blue));
@@ -310,15 +312,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkPendingModerationRequests() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null || user.getEmail() == null || !ContactAdapter.isAdminEmail(user.getEmail())) return;
+        if (user == null || user.getEmail() == null || !ContactAdapter.isAdminEmail(user.getEmail())) {
+            if (btnAdminPending != null) btnAdminPending.setVisibility(View.GONE);
+            return;
+        }
 
         firestore.collection("moderation_requests")
                 .whereEqualTo("status", "PENDING")
                 .get()
                 .addOnSuccessListener(snapshots -> {
-                    if (snapshots != null && !snapshots.isEmpty() && chipCitySelect != null) {
-                        chipCitySelect.setText("City: " + selectedCity + " (" + snapshots.size() + " Pending Review)");
-                        chipCitySelect.setOnClickListener(v -> showAdminModerationDialog(snapshots.getDocuments()));
+                    if (snapshots != null && !snapshots.isEmpty()) {
+                        if (btnAdminPending != null) {
+                            btnAdminPending.setVisibility(View.VISIBLE);
+                            btnAdminPending.setOnClickListener(v -> showAdminModerationDialog(snapshots.getDocuments()));
+                        }
+                    } else {
+                        if (btnAdminPending != null) btnAdminPending.setVisibility(View.GONE);
                     }
                 });
     }
@@ -329,37 +338,88 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        String[] items = new String[pendingDocs.size()];
-        for (int i = 0; i < pendingDocs.size(); i++) {
-            DocumentSnapshot doc = pendingDocs.get(i);
+        List<DocumentSnapshot> addRequests = new ArrayList<>();
+        List<DocumentSnapshot> deleteRequests = new ArrayList<>();
+
+        for (DocumentSnapshot doc : pendingDocs) {
+            String action = doc.getString("action");
+            if (action != null && action.equalsIgnoreCase("DELETE")) {
+                deleteRequests.add(doc);
+            } else {
+                addRequests.add(doc);
+            }
+        }
+
+        CharSequence[] tabOptions = {
+                "Add Requests (" + addRequests.size() + ")",
+                "Delete Requests (" + deleteRequests.size() + ")"
+        };
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Admin Moderation Panel")
+                .setItems(tabOptions, (dialog, which) -> {
+                    List<DocumentSnapshot> selectedList = (which == 0) ? addRequests : deleteRequests;
+                    if (selectedList.isEmpty()) {
+                        Toast.makeText(MainActivity.this, "No requests in this category.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    showRequestListDialog(selectedList);
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void showRequestListDialog(List<DocumentSnapshot> requestDocs) {
+        String[] items = new String[requestDocs.size()];
+        for (int i = 0; i < requestDocs.size(); i++) {
+            DocumentSnapshot doc = requestDocs.get(i);
             String name = doc.getString("name");
             String city = doc.getString("city");
             String email = doc.getString("uploaderEmail");
-            items[i] = name + " (" + city + ") [By: " + email + "]";
+            String action = doc.getString("action");
+            if (action == null) action = "ADD";
+            items[i] = "[" + action + "] " + (name != null ? name : "Contact") + " (" + (city != null ? city : "City") + ")\nUser: " + (email != null ? email : "Unknown");
         }
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Pending Cloud Moderation Requests")
+                .setTitle("Select Request to Review")
                 .setItems(items, (dialog, which) -> {
-                    DocumentSnapshot doc = pendingDocs.get(which);
+                    DocumentSnapshot doc = requestDocs.get(which);
                     String reqId = doc.getId();
+                    String action = doc.getString("action");
+                    if (action == null) action = "ADD";
+                    final String finalAction = action;
+                    String name = doc.getString("name");
+                    String city = doc.getString("city");
+                    String email = doc.getString("uploaderEmail");
+                    String phone = doc.getString("phone");
                     @SuppressWarnings("unchecked")
                     java.util.Map<String, Object> payloadMap = (java.util.Map<String, Object>) doc.get("contactPayload");
-                    String city = doc.getString("city");
-                    String rawPhone = doc.getString("phone");
-                    String cleanPhone = rawPhone != null ? rawPhone.replaceAll("[^0-9+]", "") : "";
+
+                    String cleanPhone = phone != null ? phone.replaceAll("[^0-9+]", "") : "";
 
                     new MaterialAlertDialogBuilder(MainActivity.this)
-                            .setTitle("Review Request")
-                            .setMessage("Approve or Reject publication of " + doc.getString("name") + " to " + city + "?")
-                            .setPositiveButton("Approve & Publish", (d, w) -> {
-                                if (payloadMap != null && !cleanPhone.isEmpty() && city != null) {
-                                    firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(payloadMap)
-                                            .addOnSuccessListener(aVoid -> {
-                                                firestore.collection("moderation_requests").document(reqId).update("status", "APPROVED");
-                                                Toast.makeText(MainActivity.this, "Request approved and published!", Toast.LENGTH_SHORT).show();
-                                                checkPendingModerationRequests();
-                                            });
+                            .setTitle("Review " + finalAction + " Request")
+                            .setMessage("Contact Name: " + name + "\nPhone: " + phone + "\nCity: " + city + "\n\nRequested By User Email:\n" + (email != null ? email : "Unknown"))
+                            .setPositiveButton("Approve & Execute", (d, w) -> {
+                                if (finalAction.equalsIgnoreCase("DELETE")) {
+                                    if (!cleanPhone.isEmpty() && city != null) {
+                                        firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).delete()
+                                                .addOnSuccessListener(aVoid -> {
+                                                    firestore.collection("moderation_requests").document(reqId).update("status", "APPROVED");
+                                                    Toast.makeText(MainActivity.this, "Deletion request approved & executed!", Toast.LENGTH_SHORT).show();
+                                                    checkPendingModerationRequests();
+                                                });
+                                    }
+                                } else {
+                                    if (payloadMap != null && !cleanPhone.isEmpty() && city != null) {
+                                        firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).set(payloadMap)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    firestore.collection("moderation_requests").document(reqId).update("status", "APPROVED");
+                                                    Toast.makeText(MainActivity.this, "Addition request approved & published!", Toast.LENGTH_SHORT).show();
+                                                    checkPendingModerationRequests();
+                                                });
+                                    }
                                 }
                             })
                             .setNegativeButton("Reject", (d, w) -> {
@@ -367,10 +427,10 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.makeText(MainActivity.this, "Request rejected.", Toast.LENGTH_SHORT).show();
                                 checkPendingModerationRequests();
                             })
-                            .setNeutralButton("Cancel", null)
+                            .setNeutralButton("Back", (d, w) -> checkPendingModerationRequests())
                             .show();
                 })
-                .setNegativeButton("Close", null)
+                .setNegativeButton("Back", (d, w) -> checkPendingModerationRequests())
                 .show();
     }
 
@@ -916,7 +976,14 @@ public class MainActivity extends AppCompatActivity {
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         restoreUserCloudBackup();
-        fetchPublicCloudContactsForMainList(showToastIfNoNew);
+
+        // Prevent auto-importing all public cloud contacts on login if user is Admin
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        boolean isAdmin = currentUser != null && currentUser.getEmail() != null && ContactAdapter.isAdminEmail(currentUser.getEmail());
+        if (!isAdmin) {
+            fetchPublicCloudContactsForMainList(showToastIfNoNew);
+        }
+
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {
             showCloudBackupPreferenceDialog(showToastIfNoNew);
             return;

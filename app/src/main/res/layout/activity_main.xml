@@ -64,6 +64,19 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <!-- Admin Pending Moderation Button (Admin Only) -->
+                <ImageButton
+                    android:id="@+id/btnAdminPending"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Pending Admin Requests"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_info"
+                    android:visibility="gone"
+                    app:tint="#F59E0B" />
+
                 <!-- Help & FAQ Button -->
                 <ImageButton
                     android:id="@+id/btnHelp"
