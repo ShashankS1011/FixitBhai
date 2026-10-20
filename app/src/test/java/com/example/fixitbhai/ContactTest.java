@@ -129,4 +129,24 @@ public class ContactTest {
         assertEquals(Boolean.TRUE, map.get("isEmergency"));
         assertEquals("Quick Service", map.get("reviewTags"));
     }
+
+    @Test
+    public void testLocalContactIsCloudDefaultsToFalse() {
+        Contact localContact = new Contact("Local AC Repair", "9876543210", "AC Repair", "Noida", false);
+        assertFalse(localContact.isCloud());
+        assertEquals("Noida", localContact.getCity());
+    }
+
+    @Test
+    public void testPrivateUserBackupPathFiltering() {
+        String publicCityPath = "cities/Noida/contacts/9876543210";
+        String privateUserBackupPath = "users/uid12345/contacts/9876543210";
+
+        assertFalse(isUserBackupPath(publicCityPath));
+        assertTrue(isUserBackupPath(privateUserBackupPath));
+    }
+
+    private boolean isUserBackupPath(String path) {
+        return path != null && (path.contains("/users/") || path.startsWith("users/"));
+    }
 }

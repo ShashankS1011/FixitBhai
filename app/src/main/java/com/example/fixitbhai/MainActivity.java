@@ -405,6 +405,11 @@ public class MainActivity extends AppCompatActivity {
             Set<String> seenPhones = new HashSet<>();
 
             for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                // Exclude private user backups from public cloud picker
+                if (doc.getReference().getPath().contains("/users/") || doc.getReference().getPath().startsWith("users/")) {
+                    continue;
+                }
+
                 Contact contact = doc.toObject(Contact.class);
                 if (contact != null && contact.getPhone() != null) {
                     String cleanPhone = contact.getPhone().replaceAll("[^0-9]", "");
@@ -869,6 +874,11 @@ public class MainActivity extends AppCompatActivity {
 
                     boolean addedNewCloudContacts = false;
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        // Exclude private user backups from public cloud list
+                        if (doc.getReference().getPath().contains("/users/") || doc.getReference().getPath().startsWith("users/")) {
+                            continue;
+                        }
+
                         Contact cloudContact = doc.toObject(Contact.class);
                         if (cloudContact != null && cloudContact.getPhone() != null) {
                             String cleanPhone = cloudContact.getPhone().replaceAll("[^0-9]", "");

@@ -31,11 +31,6 @@ public class AboutActivity extends AppCompatActivity {
             cardDeveloper.setOnClickListener(v -> openUrl(GITHUB_REPO_URL));
         }
 
-        MaterialCardView cardFeedback = findViewById(R.id.cardFeedback);
-        if (cardFeedback != null) {
-            cardFeedback.setOnClickListener(v -> openUrl(ISSUES_URL));
-        }
-
         MaterialCardView cardPrivacyPolicy = findViewById(R.id.cardPrivacyPolicy);
         if (cardPrivacyPolicy != null) {
             cardPrivacyPolicy.setOnClickListener(v -> showPrivacyPolicyDialog());
