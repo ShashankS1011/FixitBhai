@@ -36,6 +36,11 @@ public class AboutActivity extends AppCompatActivity {
             cardPrivacyPolicy.setOnClickListener(v -> showPrivacyPolicyDialog());
         }
 
+        MaterialCardView cardAppIntro = findViewById(R.id.cardAppIntro);
+        if (cardAppIntro != null) {
+            cardAppIntro.setOnClickListener(v -> startActivity(new Intent(AboutActivity.this, IntroActivity.class)));
+        }
+
         MaterialCardView cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
         if (cardDeleteAccount != null) {
             cardDeleteAccount.setOnClickListener(v -> confirmAndDeleteUserAccount());

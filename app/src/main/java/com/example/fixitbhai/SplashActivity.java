@@ -23,10 +23,13 @@ public class SplashActivity extends AppCompatActivity {
 
         navigateRunnable = () -> {
             if (!isFinishing() && !isDestroyed()) {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                android.content.SharedPreferences prefs = getSharedPreferences(MainActivity.PREFS_NAME, MODE_PRIVATE);
+                boolean introSeen = prefs.getBoolean(IntroActivity.PREF_KEY_INTRO_SEEN, false);
 
                 Intent intent;
-                if (currentUser != null) {
+                if (!introSeen) {
+                    intent = new Intent(SplashActivity.this, IntroActivity.class);
+                } else if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                     intent = new Intent(SplashActivity.this, MainActivity.class);
                 } else {
                     intent = new Intent(SplashActivity.this, LoginActivity.class);

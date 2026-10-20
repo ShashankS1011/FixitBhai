@@ -236,7 +236,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         android:contentDescription="Submit Feedback &amp; Report Issue"
-        android:src="@drawable/ic_info"
+        android:src="@drawable/ic_feedback"
         app:backgroundTint="@color/primary_blue"
         app:tint="@color/text_primary" />
 
