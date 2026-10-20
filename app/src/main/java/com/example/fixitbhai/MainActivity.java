@@ -730,6 +730,10 @@ public class MainActivity extends AppCompatActivity {
         if (recyclerViewContacts != null) recyclerViewContacts.setVisibility(View.GONE);
         if (emptyStateLayout != null) emptyStateLayout.setVisibility(View.GONE);
 
+        if (showToast) {
+            fetchPublicCloudContactsForMainList(true);
+        }
+
         // Scan local phonebook contacts (cloud contacts are imported explicitly via the cloud button)
         checkContactPermissionAndScan(showToast);
     }
@@ -1051,13 +1055,6 @@ public class MainActivity extends AppCompatActivity {
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         restoreUserCloudBackup();
-
-        // Prevent auto-importing all public cloud contacts on login if user is Admin
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        boolean isAdmin = currentUser != null && currentUser.getEmail() != null && ContactAdapter.isAdminEmail(currentUser.getEmail());
-        if (!isAdmin) {
-            fetchPublicCloudContactsForMainList(showToastIfNoNew);
-        }
 
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {
             showCloudBackupPreferenceDialog(showToastIfNoNew);
