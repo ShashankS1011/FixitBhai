@@ -139,73 +139,84 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             }
         }
 
-        // Long Press -> Upload to Shared Cloud or Submit Moderation Request
+        // Long Press -> Admin Management or User Cloud Publication Request
         holder.itemView.setOnLongClickListener(v -> {
             com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user == null) {
-                Toast.makeText(context, "Please log in to publish contacts.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Please log in to manage cloud contacts.", Toast.LENGTH_SHORT).show();
                 return true;
             }
 
             String userEmail = user.getEmail() != null ? user.getEmail().trim() : "";
             boolean isAdmin = isAdminEmail(userEmail);
 
-            String dialogTitle = isAdmin ? "Publish to Shared Cloud (Admin)" : "Request Cloud Publication";
-            String dialogMsg = isAdmin
-                    ? "Publish " + contact.getName() + " directly to the public FixitBhai cloud directory for " + contact.getCity() + "?"
-                    : "Submit " + contact.getName() + " to the admin moderation queue for review before publishing to " + contact.getCity() + "?";
+            if (isAdmin) {
+                CharSequence[] adminOptions = {"Publish / Update in Shared Cloud", "Delete from Public Cloud Directory"};
+                new MaterialAlertDialogBuilder(context)
+                        .setTitle("Cloud Management (Admin)")
+                        .setItems(adminOptions, (dialog, which) -> {
+                            String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
+                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
 
-            new MaterialAlertDialogBuilder(context)
-                    .setTitle(dialogTitle)
-                    .setMessage(dialogMsg)
-                    .setPositiveButton(isAdmin ? "Publish" : "Submit Request", (dialog, which) -> {
-                        String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
-                        String uploaderText;
-                        if (isAdmin) {
-                            uploaderText = "Admin";
-                        } else if (!displayName.isEmpty() && !userEmail.isEmpty()) {
-                            uploaderText = displayName + " (" + userEmail + ")";
-                        } else if (!userEmail.isEmpty()) {
-                            uploaderText = userEmail;
-                        } else {
-                            uploaderText = !displayName.isEmpty() ? displayName : "Verified Member";
-                        }
+                            if (which == 0) {
+                                Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
+                                cloudPayload.setRating(contact.getRating());
+                                cloudPayload.setNotes(contact.getNotes());
+                                cloudPayload.setDoNotCall(contact.isDoNotCall());
+                                cloudPayload.setEmergency(contact.isEmergency());
+                                cloudPayload.setReviewTags(contact.getReviewTags());
+                                cloudPayload.setUploadedBy("Admin");
+                                cloudPayload.setUploaderUid(user.getUid());
+                                cloudPayload.setVerified(true);
 
-                        String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
-                        String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+                                FirebaseFirestore.getInstance()
+                                        .collection("cities")
+                                        .document(city)
+                                        .collection("contacts")
+                                        .document(cleanPhone)
+                                        .set(cloudPayload.toMap())
+                                        .addOnSuccessListener(aVoid -> {
+                                            Toast.makeText(context, contact.getName() + " published to " + city + " cloud directory!", Toast.LENGTH_SHORT).show();
+                                            notifyItemChanged(position);
+                                        })
+                                        .addOnFailureListener(e -> Toast.makeText(context, "Cloud upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                            } else if (which == 1) {
+                                FirebaseFirestore.getInstance()
+                                        .collection("cities")
+                                        .document(city)
+                                        .collection("contacts")
+                                        .document(cleanPhone)
+                                        .delete()
+                                        .addOnSuccessListener(aVoid -> {
+                                            Toast.makeText(context, contact.getName() + " deleted from " + city + " cloud directory!", Toast.LENGTH_SHORT).show();
+                                            notifyItemChanged(position);
+                                        })
+                                        .addOnFailureListener(e -> Toast.makeText(context, "Cloud deletion failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            } else {
+                new MaterialAlertDialogBuilder(context)
+                        .setTitle("Request Cloud Publication")
+                        .setMessage("Submit " + contact.getName() + " to the admin moderation queue for review before publishing to " + contact.getCity() + "?")
+                        .setPositiveButton("Submit Request", (dialog, which) -> {
+                            String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
+                            String uploaderText = !displayName.isEmpty() ? displayName + " (" + userEmail + ")" : userEmail;
 
-                        Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
-                        cloudPayload.setRating(contact.getRating());
-                        cloudPayload.setNotes(contact.getNotes());
-                        cloudPayload.setDoNotCall(contact.isDoNotCall());
-                        cloudPayload.setEmergency(contact.isEmergency());
-                        cloudPayload.setReviewTags(contact.getReviewTags());
-                        cloudPayload.setUploadedBy(uploaderText);
-                        cloudPayload.setUploaderUid(user.getUid());
-                        cloudPayload.setVerified(isAdmin);
+                            String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
+                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
 
-                        if (isAdmin) {
-                            // Admin publishes directly to public city directory & personal backup
-                            FirebaseFirestore.getInstance()
-                                    .collection("cities")
-                                    .document(city)
-                                    .collection("contacts")
-                                    .document(cleanPhone)
-                                    .set(cloudPayload.toMap())
-                                    .addOnSuccessListener(aVoid -> {
-                                        FirebaseFirestore.getInstance()
-                                                .collection("users")
-                                                .document(user.getUid())
-                                                .collection("contacts")
-                                                .document(cleanPhone)
-                                                .set(cloudPayload.toMap());
+                            Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
+                            cloudPayload.setRating(contact.getRating());
+                            cloudPayload.setNotes(contact.getNotes());
+                            cloudPayload.setDoNotCall(contact.isDoNotCall());
+                            cloudPayload.setEmergency(contact.isEmergency());
+                            cloudPayload.setReviewTags(contact.getReviewTags());
+                            cloudPayload.setUploadedBy(uploaderText);
+                            cloudPayload.setUploaderUid(user.getUid());
+                            cloudPayload.setVerified(false);
 
-                                        Toast.makeText(context, contact.getName() + " published to " + city + " cloud directory!", Toast.LENGTH_SHORT).show();
-                                        notifyItemChanged(position);
-                                    })
-                                    .addOnFailureListener(e -> Toast.makeText(context, "Cloud upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                        } else {
-                            // Regular user submits a moderation request to 'moderation_requests' collection
                             java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
                             requestMap.put("action", "ADD");
                             requestMap.put("name", contact.getName());
@@ -225,10 +236,10 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                                         Toast.makeText(context, "Moderation request submitted! Admin will review your submission.", Toast.LENGTH_LONG).show();
                                     })
                                     .addOnFailureListener(e -> Toast.makeText(context, "Request failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                        }
-                    })
-                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                    .show();
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
             return true;
         });
 
