@@ -355,40 +355,93 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAdminModerationDialog(List<DocumentSnapshot> pendingDocs) {
-        if (pendingDocs == null || pendingDocs.isEmpty()) {
-            Toast.makeText(this, "No pending cloud moderation requests.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         List<DocumentSnapshot> addRequests = new ArrayList<>();
         List<DocumentSnapshot> deleteRequests = new ArrayList<>();
 
-        for (DocumentSnapshot doc : pendingDocs) {
-            String action = doc.getString("action");
-            if (action != null && action.equalsIgnoreCase("DELETE")) {
-                deleteRequests.add(doc);
-            } else {
-                addRequests.add(doc);
+        if (pendingDocs != null) {
+            for (DocumentSnapshot doc : pendingDocs) {
+                String action = doc.getString("action");
+                if (action != null && action.equalsIgnoreCase("DELETE")) {
+                    deleteRequests.add(doc);
+                } else {
+                    addRequests.add(doc);
+                }
             }
         }
 
         CharSequence[] tabOptions = {
                 "Add Requests (" + addRequests.size() + ")",
-                "Delete Requests (" + deleteRequests.size() + ")"
+                "Delete Requests (" + deleteRequests.size() + ")",
+                "Clear Public Cloud Directory (Admin)"
         };
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Admin Moderation Panel")
                 .setItems(tabOptions, (dialog, which) -> {
-                    List<DocumentSnapshot> selectedList = (which == 0) ? addRequests : deleteRequests;
-                    if (selectedList.isEmpty()) {
-                        Toast.makeText(MainActivity.this, "No requests in this category.", Toast.LENGTH_SHORT).show();
-                        return;
+                    if (which == 0) {
+                        if (addRequests.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "No pending add requests.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        showRequestListDialog(addRequests);
+                    } else if (which == 1) {
+                        if (deleteRequests.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "No pending delete requests.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        showRequestListDialog(deleteRequests);
+                    } else if (which == 2) {
+                        new MaterialAlertDialogBuilder(MainActivity.this)
+                                .setTitle("Clear Public Cloud Directory")
+                                .setMessage("Are you sure you want to permanently delete all public shared contacts from the cloud directory?")
+                                .setPositiveButton("Clear All Cloud Contacts", (d, w) -> clearPublicCloudDirectory())
+                                .setNegativeButton("Cancel", null)
+                                .show();
                     }
-                    showRequestListDialog(selectedList);
                 })
                 .setNegativeButton("Close", null)
                 .show();
+    }
+
+    private void clearPublicCloudDirectory() {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+
+        firestore.collectionGroup("contacts").get()
+                .addOnSuccessListener(snapshots -> {
+                    if (snapshots != null && !snapshots.isEmpty()) {
+                        com.google.firebase.firestore.WriteBatch batch = firestore.batch();
+                        int count = 0;
+                        for (DocumentSnapshot doc : snapshots) {
+                            if (!doc.getReference().getPath().contains("/users/")) {
+                                batch.delete(doc.getReference());
+                                count++;
+                            }
+                        }
+                        int finalCount = count;
+                        batch.commit().addOnSuccessListener(aVoid -> {
+                            if (progressBar != null) progressBar.setVisibility(View.GONE);
+                            Toast.makeText(MainActivity.this, "Successfully cleared " + finalCount + " public contacts from cloud!", Toast.LENGTH_LONG).show();
+                            contactList.clear();
+                            contactList.addAll(dbHelper.getAllContacts());
+                            if (adapter != null) {
+                                adapter.updateData(contactList);
+                                adapter.filterBy("", getFilterCity());
+                            }
+                            checkEmptyState();
+                            checkPendingModerationRequests();
+                        }).addOnFailureListener(e -> {
+                            if (progressBar != null) progressBar.setVisibility(View.GONE);
+                            Toast.makeText(MainActivity.this, "Failed to clear cloud: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+                        Toast.makeText(MainActivity.this, "Cloud directory is already empty.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    Toast.makeText(MainActivity.this, "Error querying cloud: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void showRequestListDialog(List<DocumentSnapshot> requestDocs) {

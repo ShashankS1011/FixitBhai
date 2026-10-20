@@ -406,7 +406,6 @@ public class LoginActivity extends AppCompatActivity {
                         for (com.google.firebase.firestore.DocumentSnapshot doc : task.getResult()) {
                             Contact contact = doc.toObject(Contact.class);
                             if (contact != null && contact.getPhone() != null) {
-                                contact.setCloud(true);
                                 if (!dbHelper.contactExists(contact.getPhone())) {
                                     dbHelper.addContact(contact);
                                 }
