@@ -23,7 +23,6 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 public class ContactDetailActivity extends AppCompatActivity {
 
     private TextView tvName, tvPhone, tvCategory, tvWarningBadge;
-    private RatingBar ratingBar;
     private CheckBox cbDoNotCall, cbEmergency;
     private EditText etNotes, etCity;
     private Button btnShareText, btnShareQR, btnSave, btnDelete;
@@ -67,7 +66,6 @@ public class ContactDetailActivity extends AppCompatActivity {
         tvPhone = findViewById(R.id.tvContactPhone);
         tvCategory = findViewById(R.id.tvContactCategory);
         tvWarningBadge = findViewById(R.id.tvWarningBadge);
-        ratingBar = findViewById(R.id.ratingBar);
         cbDoNotCall = findViewById(R.id.cbDoNotCall);
         cbEmergency = findViewById(R.id.cbEmergency);
         etNotes = findViewById(R.id.etNotes);
@@ -100,7 +98,6 @@ public class ContactDetailActivity extends AppCompatActivity {
                 if (tvCategory != null) tvCategory.setText(category + " • " + city);
                 if (etCity != null) etCity.setText(city);
 
-                if (ratingBar != null) ratingBar.setRating(contact.getRating());
                 if (etNotes != null) etNotes.setText(contact.getNotes());
                 if (cbDoNotCall != null) {
                     cbDoNotCall.setChecked(contact.isDoNotCall());
@@ -131,7 +128,7 @@ public class ContactDetailActivity extends AppCompatActivity {
     }
 
     private void saveContactChanges() {
-        float rating = ratingBar != null ? ratingBar.getRating() : 0.0f;
+        float rating = 0.0f;
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
         boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
@@ -175,15 +172,27 @@ public class ContactDetailActivity extends AppCompatActivity {
     }
 
     private void confirmAndDeleteContact() {
+        String[] reasons = {
+                "Technician No Longer Working / Retired",
+                "Duplicate Entry",
+                "Wrong / Disconnected Phone Number",
+                "Poor Service Quality / Blacklisted",
+                "Other / Unused Contact"
+        };
+
         new AlertDialog.Builder(this)
-                .setTitle("Delete Contact")
-                .setMessage("Are you sure you want to delete " + name + " from local storage and cloud backup?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteContact())
+                .setTitle("Select Deletion Reason")
+                .setSingleChoiceItems(reasons, 0, null)
+                .setPositiveButton("Confirm Delete", (dialog, which) -> {
+                    int selectedIndex = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
+                    String reason = (selectedIndex >= 0 && selectedIndex < reasons.length) ? reasons[selectedIndex] : "Other";
+                    deleteContact(reason);
+                })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void deleteContact() {
+    private void deleteContact(String reason) {
         // 1. Delete from SQLite local database
         dbHelper.deleteContact(phone);
 
@@ -194,16 +203,17 @@ public class ContactDetailActivity extends AppCompatActivity {
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId != null) {
             String cleanPhone = phone.replaceAll("[^0-9+]", "");
-            firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).delete();
+            if (isCloud) {
+                firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).delete();
+            }
             firestore.collection("users").document(userId).collection("contacts").document(cleanPhone).delete();
         }
 
-        Toast.makeText(this, "Contact deleted from app and system phonebook", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, name + " deleted (" + reason + ")", Toast.LENGTH_SHORT).show();
         finish();
     }
 
     private void shareContactAsText() {
-        float rating = ratingBar != null ? ratingBar.getRating() : 0;
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
 
@@ -213,10 +223,6 @@ public class ContactDetailActivity extends AppCompatActivity {
         shareBody.append("Service: ").append(category).append("\n");
         shareBody.append("City: ").append(city).append("\n");
         shareBody.append("Phone: ").append(phone).append("\n");
-
-        if (rating > 0) {
-            shareBody.append("Rating: ").append((int) rating).append("/5 Stars\n");
-        }
 
         if (isDoNotCall) {
             shareBody.append("\nNOTE: Marked as Do Not Call Again in FixitBhai\n");

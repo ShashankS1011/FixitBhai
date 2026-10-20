@@ -96,7 +96,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             }
         }
 
-        // --- NEW: Cloud vs Local UI Styling ---
+        // --- Cloud vs Local UI Styling ---
         if (contact.isCloud()) {
             holder.tvSourceBadge.setText("Cloud");
             holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#0F62FE")); // Modern Blue background
@@ -106,7 +106,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             holder.tvSourceBadge.setBackgroundColor(Color.parseColor("#10B981")); // Emerald Green background
             holder.cardContact.setStrokeColor(Color.parseColor("#334155")); // Dark slate border
         }
-        // ----------------------------------------
 
         if (contact.isDoNotCall()) {
             holder.tvName.setTextColor(Color.parseColor("#EF4444")); // Warning Red
@@ -156,7 +155,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                         .setTitle("Cloud Management (Admin)")
                         .setItems(adminOptions, (dialog, which) -> {
                             String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
-                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty() && !contact.getCity().equalsIgnoreCase("Unassigned")) ? contact.getCity().trim() : "Prayagraj";
 
                             if (which == 0) {
                                 Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
@@ -197,48 +196,39 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                         .setNegativeButton("Cancel", null)
                         .show();
             } else {
-                new MaterialAlertDialogBuilder(context)
-                        .setTitle("Request Cloud Publication")
-                        .setMessage("Submit " + contact.getName() + " to the admin moderation queue for review before publishing to " + contact.getCity() + "?")
-                        .setPositiveButton("Submit Request", (dialog, which) -> {
-                            String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
-                            String uploaderText = !displayName.isEmpty() ? displayName + " (" + userEmail + ")" : userEmail;
+                String targetCity = (contact.getCity() != null && !contact.getCity().trim().isEmpty() && !contact.getCity().equalsIgnoreCase("Unassigned")) ? contact.getCity().trim() : "";
+                if (targetCity.isEmpty()) {
+                    com.google.android.material.textfield.TextInputLayout tilCity = new com.google.android.material.textfield.TextInputLayout(context);
+                    tilCity.setHint("Target City (e.g. Noida, Chennai, Prayagraj)");
+                    tilCity.setPadding(32, 16, 32, 16);
 
-                            String cleanPhone = contact.getPhone().replaceAll("[^0-9+]", "");
-                            String city = (contact.getCity() != null && !contact.getCity().trim().isEmpty()) ? contact.getCity().trim() : "Prayagraj";
+                    com.google.android.material.textfield.TextInputEditText etCityInput = new com.google.android.material.textfield.TextInputEditText(context);
+                    etCityInput.setInputType(android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                    tilCity.addView(etCityInput);
 
-                            Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
-                            cloudPayload.setRating(contact.getRating());
-                            cloudPayload.setNotes(contact.getNotes());
-                            cloudPayload.setDoNotCall(contact.isDoNotCall());
-                            cloudPayload.setEmergency(contact.isEmergency());
-                            cloudPayload.setReviewTags(contact.getReviewTags());
-                            cloudPayload.setUploadedBy(uploaderText);
-                            cloudPayload.setUploaderUid(user.getUid());
-                            cloudPayload.setVerified(false);
-
-                            java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
-                            requestMap.put("action", "ADD");
-                            requestMap.put("name", contact.getName());
-                            requestMap.put("phone", contact.getPhone());
-                            requestMap.put("category", contact.getCategory());
-                            requestMap.put("city", city);
-                            requestMap.put("uploaderEmail", userEmail);
-                            requestMap.put("uploaderUid", user.getUid());
-                            requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
-                            requestMap.put("status", "PENDING");
-                            requestMap.put("contactPayload", cloudPayload.toMap());
-
-                            FirebaseFirestore.getInstance()
-                                    .collection("moderation_requests")
-                                    .add(requestMap)
-                                    .addOnSuccessListener(docRef -> {
-                                        Toast.makeText(context, "Moderation request submitted! Admin will review your submission.", Toast.LENGTH_LONG).show();
-                                    })
-                                    .addOnFailureListener(e -> Toast.makeText(context, "Request failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                        })
-                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                        .show();
+                    new MaterialAlertDialogBuilder(context)
+                            .setTitle("Target City Required")
+                            .setMessage("Please specify a target city for " + contact.getName() + " before submitting to the cloud directory.")
+                            .setView(tilCity)
+                            .setPositiveButton("Submit with City", (d, w) -> {
+                                String inputCity = etCityInput.getText() != null ? etCityInput.getText().toString().trim() : "";
+                                if (!inputCity.isEmpty()) {
+                                    contact.setCity(inputCity);
+                                    submitCloudModerationRequest(context, contact, user, userEmail, inputCity);
+                                } else {
+                                    Toast.makeText(context, "City is required for cloud publication.", Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                } else {
+                    new MaterialAlertDialogBuilder(context)
+                            .setTitle("Request Cloud Publication")
+                            .setMessage("Submit " + contact.getName() + " to the admin moderation queue for review before publishing to " + targetCity + "?")
+                            .setPositiveButton("Submit Request", (dialog, which) -> submitCloudModerationRequest(context, contact, user, userEmail, targetCity))
+                            .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                            .show();
+                }
             }
             return true;
         });
@@ -284,6 +274,39 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                 context.startActivity(Intent.createChooser(shareIntent, "Share Technician Via"));
             });
         }
+    }
+
+    private static void submitCloudModerationRequest(Context context, Contact contact, com.google.firebase.auth.FirebaseUser user, String userEmail, String city) {
+        String displayName = user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty() ? user.getDisplayName().trim() : "";
+        String uploaderText = !displayName.isEmpty() ? displayName + " (" + userEmail + ")" : userEmail;
+
+        Contact cloudPayload = new Contact(contact.getName(), contact.getPhone(), contact.getCategory(), city, true);
+        cloudPayload.setRating(contact.getRating());
+        cloudPayload.setNotes(contact.getNotes());
+        cloudPayload.setDoNotCall(contact.isDoNotCall());
+        cloudPayload.setEmergency(contact.isEmergency());
+        cloudPayload.setReviewTags(contact.getReviewTags());
+        cloudPayload.setUploadedBy(uploaderText);
+        cloudPayload.setUploaderUid(user.getUid());
+        cloudPayload.setVerified(false);
+
+        java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+        requestMap.put("action", "ADD");
+        requestMap.put("name", contact.getName());
+        requestMap.put("phone", contact.getPhone());
+        requestMap.put("category", contact.getCategory());
+        requestMap.put("city", city);
+        requestMap.put("uploaderEmail", userEmail);
+        requestMap.put("uploaderUid", user.getUid());
+        requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+        requestMap.put("status", "PENDING");
+        requestMap.put("contactPayload", cloudPayload.toMap());
+
+        FirebaseFirestore.getInstance()
+                .collection("moderation_requests")
+                .add(requestMap)
+                .addOnSuccessListener(docRef -> Toast.makeText(context, "Moderation request submitted! Admin will review your submission.", Toast.LENGTH_LONG).show())
+                .addOnFailureListener(e -> Toast.makeText(context, "Request failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     @Override

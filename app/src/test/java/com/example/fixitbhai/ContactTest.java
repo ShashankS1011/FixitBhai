@@ -55,7 +55,7 @@ public class ContactTest {
     @Test
     public void testContactConstructorAndDefaults() {
         Contact contact = new Contact();
-        assertEquals("General", contact.getCity());
+        assertEquals("Unassigned", contact.getCity());
         assertEquals("", contact.getNotes());
         assertEquals(0.0f, contact.getRating(), 0.001f);
         assertFalse(contact.isDoNotCall());

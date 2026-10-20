@@ -34,7 +34,7 @@ public class Contact implements Serializable {
 
     // Default No-Argument Constructor (Required for Firestore doc.toObject(Contact.class))
     public Contact() {
-        this.city = "General";
+        this.city = "Unassigned";
         this.notes = "";
         this.rating = 0.0f;
         this.doNotCall = false;
@@ -52,7 +52,7 @@ public class Contact implements Serializable {
         this.name = name;
         this.phone = formatWithCountryCode(phone);
         this.category = category;
-        this.city = (city != null && !city.trim().isEmpty()) ? city.trim() : "General";
+        this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned";
         this.isCloud = isCloud;
     }
 
@@ -62,7 +62,7 @@ public class Contact implements Serializable {
         this.name = name;
         this.phone = formatWithCountryCode(phone);
         this.category = category;
-        this.city = (city != null && !city.trim().isEmpty()) ? city.trim() : "General";
+        this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned";
         this.rating = rating;
         this.notes = notes != null ? notes : "";
         this.doNotCall = doNotCall;
@@ -99,8 +99,8 @@ public class Contact implements Serializable {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
-    public String getCity() { return (city != null && !city.trim().isEmpty()) ? city.trim() : "General"; }
-    public void setCity(String city) { this.city = city; }
+    public String getCity() { return (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
+    public void setCity(String city) { this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
 
     public float getRating() { return rating; }
     public void setRating(float rating) { this.rating = rating; }
@@ -142,13 +142,13 @@ public class Contact implements Serializable {
     public boolean isVerified() { return isVerified; }
 
     @PropertyName("isVerified")
-    public void setVerified(boolean verified) { isVerified = verified; }
+    public void setVerified(boolean verified) { this.isVerified = verified; }
 
     @PropertyName("isEmergency")
     public boolean isEmergency() { return isEmergency; }
 
     @PropertyName("isEmergency")
-    public void setEmergency(boolean emergency) { isEmergency = emergency; }
+    public void setEmergency(boolean emergency) { this.isEmergency = emergency; }
 
     @PropertyName("reviewTags")
     public String getReviewTags() { return reviewTags != null ? reviewTags : ""; }

@@ -893,10 +893,6 @@ public class MainActivity extends AppCompatActivity {
 
                     if (addedNewCloudContacts) {
                         Collections.sort(contactList, (c1, c2) -> {
-                            String city1 = c1.getCity() != null ? c1.getCity() : "";
-                            String city2 = c2.getCity() != null ? c2.getCity() : "";
-                            int cityComp = city1.compareToIgnoreCase(city2);
-                            if (cityComp != 0) return cityComp;
                             String name1 = c1.getName() != null ? c1.getName() : "";
                             String name2 = c2.getName() != null ? c2.getName() : "";
                             return name1.compareToIgnoreCase(name2);

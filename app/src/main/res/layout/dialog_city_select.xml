@@ -45,6 +45,7 @@
         android:layout_height="220dp"
         android:choiceMode="singleChoice"
         android:divider="#334155"
-        android:dividerHeight="1dp" />
+        android:dividerHeight="1dp"
+        android:scrollbars="none" />
 
 </LinearLayout>
