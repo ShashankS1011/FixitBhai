@@ -68,6 +68,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        try {
+            db.execSQL("UPDATE " + TABLE_CONTACTS + " SET " + KEY_CITY + " = 'Unassigned' WHERE " + KEY_CITY + " = 'General' OR " + KEY_CITY + " IS NULL OR " + KEY_CITY + " = ''");
+            db.execSQL("UPDATE " + TABLE_CLOUD_CACHE + " SET " + KEY_CITY + " = 'Unassigned' WHERE " + KEY_CITY + " = 'General' OR " + KEY_CITY + " IS NULL OR " + KEY_CITY + " = ''");
+        } catch (Exception ignored) {}
+    }
+
+    @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         try {
             if (oldVersion < 2) {

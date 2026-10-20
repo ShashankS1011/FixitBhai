@@ -1310,7 +1310,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     if (matchedCategory != null) {
-                        String detectedCity = "General";
+                        String detectedCity = "Unassigned";
                         for (Map.Entry<String, Pattern> entry : compiledCities.entrySet()) {
                             if (entry.getValue().matcher(lowerName).matches()) {
                                 String knownCity = entry.getKey();

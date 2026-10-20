@@ -63,9 +63,14 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         holder.tvPhone.setText(formatForDisplay(contact.getPhone()));
 
         if (holder.tvCategoryCity != null) {
-            String category = contact.getCategory() != null ? contact.getCategory() : "General";
+            String category = contact.getCategory() != null ? contact.getCategory() : "Service";
             String city = contact.getCity() != null ? contact.getCity() : "";
-            String categoryCityText = city.isEmpty() ? category : category + " • " + city;
+            String categoryCityText;
+            if (city.isEmpty() || city.equalsIgnoreCase("Unassigned") || city.equalsIgnoreCase("General")) {
+                categoryCityText = category;
+            } else {
+                categoryCityText = category + " • " + city;
+            }
             holder.tvCategoryCity.setText(categoryCityText);
         }
 
