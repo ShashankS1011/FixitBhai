@@ -25,7 +25,7 @@ public class IntroActivity extends AppCompatActivity {
 
     private ViewPager2 viewPagerIntro;
     private TextView tvStepIndicator;
-    private MaterialButton btnNextIntro, btnSkipIntro;
+    private MaterialButton btnNextIntro;
 
     private static class IntroSlide {
         int iconResId;
@@ -47,28 +47,28 @@ public class IntroActivity extends AppCompatActivity {
         viewPagerIntro = findViewById(R.id.viewPagerIntro);
         tvStepIndicator = findViewById(R.id.tvStepIndicator);
         btnNextIntro = findViewById(R.id.btnNextIntro);
-        btnSkipIntro = findViewById(R.id.btnSkipIntro);
+        MaterialButton btnSkipIntro = findViewById(R.id.btnSkipIntro);
 
         List<IntroSlide> slides = new ArrayList<>();
         slides.add(new IntroSlide(
                 R.drawable.ic_fixitbhai_logo,
-                "Smart Local Phonebook Scanner",
-                "FixitBhai automatically discovers plumbers, electricians, AC repair experts, and technicians from your device phonebook while keeping your personal contacts 100% private."
+                "Smart Phonebook Scanner",
+                "FixitBhai automatically discovers plumbers, electricians, AC repair experts, and technicians from your device phonebook while keeping your personal contacts 100% private and local."
         ));
         slides.add(new IntroSlide(
                 R.drawable.ic_search,
-                "City Directories & Service Chips",
-                "Filter technicians by target cities (e.g. Noida, Gurgaon, Chennai) or tap service trade chips to find AC Repair, RO Technicians, or Electricians instantly."
+                "City Directories & Service Filters",
+                "Easily filter local experts by target cities (e.g. Noida, Gurgaon, Chennai) or tap trade chips to find AC Repair, Electricians, or Plumbers instantly."
         ));
         slides.add(new IntroSlide(
                 R.drawable.ic_cloud_download,
-                "Verified Cloud Experts & Moderation",
-                "Discover community-verified repair experts from the cloud. Request cloud publication for local experts, backed by secure admin moderation."
+                "Cloud Experts & Moderation",
+                "Discover verified repair experts from the cloud. Submit cloud publication requests for local experts, securely reviewed via the in-app admin moderation queue."
         ));
         slides.add(new IntroSlide(
                 R.drawable.ic_help,
                 "One-Tap Actions & Safety Flags",
-                "Call, WhatsApp, share contacts, or scan QR codes instantly. Mark bad service providers with 'Do Not Call' warnings to avoid re-hiring."
+                "Call, WhatsApp, share contacts, or scan QR codes instantly. Mark unreliable service providers with 'Do Not Call' safety warnings to avoid re-hiring."
         ));
 
         IntroAdapter adapter = new IntroAdapter(slides);
@@ -83,7 +83,7 @@ public class IntroActivity extends AppCompatActivity {
                     tvStepIndicator.setText((position + 1) + " of " + total);
                 }
                 if (btnNextIntro != null) {
-                    btnNextIntro.setText(position == total - 1 ? "Get Started 🚀" : "Next ➔");
+                    btnNextIntro.setText(position == total - 1 ? "Get Started" : "Next");
                 }
             }
         });
