@@ -351,7 +351,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        String pass = "GoogleAuth_" + Math.abs(email.hashCode());
+        String pass = "GoogleAuth_" + Math.abs(email.hashCode()) + "123456";
         mAuth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
