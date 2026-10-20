@@ -16,6 +16,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 5;
 
     private static final String TABLE_CONTACTS = "contacts";
+    private static final String TABLE_CLOUD_CACHE = "cloud_cache";
     private static final String KEY_ID = "id";
     private static final String KEY_NAME = "name";
     private static final String KEY_PHONE = "phone";
@@ -47,6 +48,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0,"
                 + KEY_REVIEW_TAGS + " TEXT DEFAULT ''" + ")";
         db.execSQL(CREATE_CONTACTS_TABLE);
+
+        String CREATE_CLOUD_CACHE_TABLE = "CREATE TABLE " + TABLE_CLOUD_CACHE + "("
+                + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + KEY_NAME + " TEXT,"
+                + KEY_PHONE + " TEXT UNIQUE,"
+                + KEY_CATEGORY + " TEXT,"
+                + KEY_CITY + " TEXT,"
+                + KEY_RATING + " REAL DEFAULT 0.0,"
+                + KEY_NOTES + " TEXT,"
+                + KEY_DO_NOT_CALL + " INTEGER DEFAULT 0,"
+                + KEY_IS_CLOUD + " INTEGER DEFAULT 1,"
+                + KEY_IS_EMERGENCY + " INTEGER DEFAULT 0,"
+                + KEY_REVIEW_TAGS + " TEXT DEFAULT ''" + ")";
+        db.execSQL(CREATE_CLOUD_CACHE_TABLE);
+
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_city_cat ON " + TABLE_CONTACTS + "(" + KEY_CITY + ", " + KEY_CATEGORY + ")");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_contacts_phone ON " + TABLE_CONTACTS + "(" + KEY_PHONE + ")");
     }
@@ -235,6 +251,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contact.setReviewTags(reviewTags);
 
         return contact;
+    }
+
+    public void cacheCloudContact(Contact contact) {
+        if (contact == null || contact.getPhone() == null) return;
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_NAME, contact.getName());
+        values.put(KEY_PHONE, contact.getPhone());
+        values.put(KEY_CATEGORY, contact.getCategory());
+        values.put(KEY_CITY, contact.getCity());
+        values.put(KEY_RATING, contact.getRating());
+        values.put(KEY_NOTES, contact.getNotes());
+        values.put(KEY_DO_NOT_CALL, contact.isDoNotCall() ? 1 : 0);
+        values.put(KEY_IS_CLOUD, 1);
+        values.put(KEY_IS_EMERGENCY, contact.isEmergency() ? 1 : 0);
+        values.put(KEY_REVIEW_TAGS, contact.getReviewTags());
+        db.insertWithOnConflict(TABLE_CLOUD_CACHE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        db.close();
+    }
+
+    public List<Contact> getCachedCloudContacts(String filterCity) {
+        List<Contact> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor;
+        if (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All")) {
+            cursor = db.rawQuery("SELECT * FROM " + TABLE_CLOUD_CACHE, null);
+        } else {
+            cursor = db.rawQuery("SELECT * FROM " + TABLE_CLOUD_CACHE + " WHERE " + KEY_CITY + " LIKE ?", new String[]{filterCity.trim()});
+        }
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(extractContactFromCursor(cursor));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
+        db.close();
+        return list;
     }
 
     public boolean contactExists(String phone) {
