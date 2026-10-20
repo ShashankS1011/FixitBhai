@@ -159,9 +159,14 @@ public class LoginActivity extends AppCompatActivity {
     private String getWebClientId() {
         try {
             int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
-            if (resId != 0) return getString(resId);
+            if (resId != 0) {
+                String id = getString(resId);
+                if (!id.isEmpty() && !id.contains("defaultwebclient")) {
+                    return id;
+                }
+            }
         } catch (Exception ignored) {}
-        return getString(R.string.default_web_client_id);
+        return "150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com";
     }
 
     @Override
