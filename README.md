@@ -18,7 +18,6 @@ Never lose the contact number of a verified local technician again or confuse th
 - [Tech Stack](#tech-stack)
 - [Downloads & Releases](#downloads--releases)
 - [Building & Testing](#building--testing)
-- [Suggested Future Enhancements](#suggested-future-enhancements)
 - [License](#license)
 
 ---
@@ -125,16 +124,6 @@ The generated APK will be located at `app/build/outputs/apk/debug/app-debug.apk`
    ```bash
    ./gradlew testDebugUnitTest assembleDebug
    ```
-
----
-
-## Suggested Future Enhancements
-
-While FixitBhai is feature-complete and fully optimized, here are optional architectural suggestions for future roadmap consideration:
-
-1. **Biometric App Lock (Fingerprint / Face ID):** Add an optional biometric app lock using `androidx.biometric` so users can lock their technician database with fingerprint or Face Unlock.
-2. **Contact Export to CSV / vCard File:** Allow users to export their local database to a `.vcf` or `.csv` file for external phonebook import.
-3. **SMS Quick Share:** Allow sharing technician details directly via SMS / Messaging app in addition to WhatsApp.
 
 ---
 
