@@ -86,6 +86,7 @@ Special thanks to the contributors who help improve FixitBhai:
 
 - **[Divyanshu Singh](https://github.com/ROGU3D3viL)** ([@ROGU3D3viL](https://github.com/ROGU3D3viL)) — Identified and reported the phone authentication issue and cross-user cloud contact synchronization bug.
 - **[@Butteryjam](https://github.com/Butteryjam)** — Reported city directory filtering behavior, Google Sign-In authentication error, and package update signing conflict.
+- **[Riya Kesharwani](https://github.com/riya102002)** ([@riya102002](https://github.com/riya102002)) — Reported Google Sign-In OAuth flow, logout button touch bounds, and Prayagraj/Allahabad city alias segmentation.
 
 ---
 
