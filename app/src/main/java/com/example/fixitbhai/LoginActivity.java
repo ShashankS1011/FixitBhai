@@ -45,7 +45,6 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private GoogleSignInClient mGoogleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
-    private ActivityResultLauncher<Intent> basicGoogleSignInLauncher;
 
     private boolean isRegistrationMode = false;
 
@@ -88,51 +87,28 @@ public class LoginActivity extends AppCompatActivity {
                 result -> {
                     if (result.getData() != null) {
                         Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                        GoogleSignInAccount account = null;
                         try {
-                            GoogleSignInAccount account = task.getResult(ApiException.class);
-                            if (account != null) {
-                                String idToken = account.getIdToken();
-                                String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
-                                if (idToken != null && !idToken.isEmpty()) {
-                                    AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-                                    signInWithFirebaseCredential(credential, displayName);
-                                } else if (account.getEmail() != null) {
-                                    handleGoogleAccountDirectly(account);
-                                }
-                            }
+                            account = task.getResult(ApiException.class);
                         } catch (ApiException e) {
                             Log.w(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
-                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
-                            if (lastAccount != null && lastAccount.getEmail() != null) {
-                                handleGoogleAccountDirectly(lastAccount);
-                            } else {
-                                performBasicGoogleSignIn();
-                            }
                         }
-                    }
-                });
 
-        basicGoogleSignInLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getData() != null) {
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                        try {
-                            GoogleSignInAccount account = task.getResult(ApiException.class);
-                            if (account != null && account.getEmail() != null) {
-                                handleGoogleAccountDirectly(account);
+                        if (account == null) {
+                            account = GoogleSignIn.getLastSignedInAccount(this);
+                        }
+
+                        if (account != null && account.getEmail() != null) {
+                            String idToken = account.getIdToken();
+                            String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
+                            if (idToken != null && !idToken.isEmpty()) {
+                                AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+                                signInWithFirebaseCredential(credential, displayName);
                             } else {
-                                GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
-                                if (lastAccount != null && lastAccount.getEmail() != null) {
-                                    handleGoogleAccountDirectly(lastAccount);
-                                }
+                                handleGoogleAccountDirectly(account);
                             }
-                        } catch (Exception e) {
-                            Log.w(TAG, "Basic Google Sign In exception: " + e.getMessage(), e);
-                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
-                            if (lastAccount != null && lastAccount.getEmail() != null) {
-                                handleGoogleAccountDirectly(lastAccount);
-                            }
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Google Sign-In cancelled or unavailable.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -303,15 +279,6 @@ public class LoginActivity extends AppCompatActivity {
                 googleSignInLauncher.launch(signInIntent);
             });
         }
-    }
-
-    private void performBasicGoogleSignIn() {
-        GoogleSignInOptions basicGso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
-        GoogleSignInClient basicClient = GoogleSignIn.getClient(this, basicGso);
-        Intent signInIntent = basicClient.getSignInIntent();
-        basicGoogleSignInLauncher.launch(signInIntent);
     }
 
     private void signInWithFirebaseCredential(AuthCredential credential, String displayName) {
