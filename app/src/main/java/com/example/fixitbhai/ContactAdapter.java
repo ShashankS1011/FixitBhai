@@ -382,7 +382,9 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
                 boolean matchesCity = currentCityFilter.isEmpty()
                         || currentCityFilter.equalsIgnoreCase("all")
                         || currentCityFilter.equalsIgnoreCase("all cities")
-                        || (item.getCity() != null && item.getCity().equalsIgnoreCase(currentCityFilter));
+                        || (item.getCity() != null && (item.getCity().equalsIgnoreCase(currentCityFilter)
+                            || (currentCityFilter.equalsIgnoreCase("prayagraj") && item.getCity().equalsIgnoreCase("allahabad"))
+                            || (currentCityFilter.equalsIgnoreCase("allahabad") && item.getCity().equalsIgnoreCase("prayagraj"))));
 
                 if (matchesCategory && matchesCity) {
                     filteredList.add(item);
