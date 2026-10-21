@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.fixitbhai"
         minSdk = 24
         targetSdk = 37
-        versionCode = 75
-        versionName = "13.0.0"
+        versionCode = 76
+        versionName = "14.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

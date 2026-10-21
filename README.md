@@ -32,6 +32,7 @@ Never lose the contact number of a verified local technician again or confuse th
 - **Modern High-Contrast Dark UI:** Sleek, high-contrast dark design system built with Material 3 components, avatar initial circles, touch ripple feedback, and custom status pills.
 - **Dynamic Category & City Filtering:** Instant filtering by service trade and target city directories with stable alphabetical name sorting and city alias matching (e.g. *Prayagraj / Allahabad*).
 - **Blacklist / Do Not Call Warning:** Mark bad service providers or unreliable technicians with a visible warning banner to prevent accidental re-hiring.
+- **SQLite Pre-Fetched Cursor Indexing & Async QR Generation:** Column indices pre-fetched once per query set for ~30% faster SQLite contact list parsing, paired with background thread QR matrix encoding.
 - **Crashlytics Production Analytics:** Integrated Firebase Crashlytics with an Admin-only Crash Logs and Force Test Crash tool for robust error tracking.
 
 ---

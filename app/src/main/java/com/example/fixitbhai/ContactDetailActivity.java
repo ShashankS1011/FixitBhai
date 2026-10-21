@@ -242,32 +242,42 @@ public class ContactDetailActivity extends AppCompatActivity {
     }
 
     private void showQRCodeDialog() {
-        try {
-            String vCard = "BEGIN:VCARD\n" +
-                    "VERSION:3.0\n" +
-                    "N:" + name + ";;;\n" +
-                    "FN:" + name + "\n" +
-                    "TEL;TYPE=CELL:" + phone + "\n" +
-                    "ADR;TYPE=HOME:;;" + city + ";;;;\n" +
-                    "NOTE:FixitBhai Service - " + category + "\n" +
-                    "END:VCARD";
+        Toast.makeText(this, "Generating QR code...", Toast.LENGTH_SHORT).show();
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
-            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-            Bitmap bitmap = barcodeEncoder.encodeBitmap(vCard, BarcodeFormat.QR_CODE, 600, 600);
+        executor.execute(() -> {
+            try {
+                String vCard = "BEGIN:VCARD\n" +
+                        "VERSION:3.0\n" +
+                        "N:" + name + ";;;\n" +
+                        "FN:" + name + "\n" +
+                        "TEL;TYPE=CELL:" + phone + "\n" +
+                        "ADR;TYPE=HOME:;;" + city + ";;;;\n" +
+                        "NOTE:FixitBhai Service - " + category + "\n" +
+                        "END:VCARD";
 
-            ImageView imageView = new ImageView(this);
-            imageView.setImageBitmap(bitmap);
-            imageView.setPadding(32, 32, 32, 32);
+                BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+                Bitmap bitmap = barcodeEncoder.encodeBitmap(vCard, BarcodeFormat.QR_CODE, 600, 600);
 
-            new AlertDialog.Builder(this)
-                    .setTitle("Scan to Save " + name)
-                    .setMessage("Scan this QR code with a phone camera to save the contact directly.")
-                    .setView(imageView)
-                    .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
-                    .show();
+                handler.post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        ImageView imageView = new ImageView(ContactDetailActivity.this);
+                        imageView.setImageBitmap(bitmap);
+                        imageView.setPadding(32, 32, 32, 32);
 
-        } catch (Exception e) {
-            Toast.makeText(this, "Could not generate QR code.", Toast.LENGTH_SHORT).show();
-        }
+                        new AlertDialog.Builder(ContactDetailActivity.this)
+                                .setTitle("Scan to Save " + name)
+                                .setMessage("Scan this QR code with a phone camera to save the contact directly.")
+                                .setView(imageView)
+                                .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+                                .show();
+                    }
+                });
+            } catch (Exception e) {
+                handler.post(() -> Toast.makeText(ContactDetailActivity.this, "Could not generate QR code.", Toast.LENGTH_SHORT).show());
+            }
+            executor.shutdown();
+        });
     }
 }

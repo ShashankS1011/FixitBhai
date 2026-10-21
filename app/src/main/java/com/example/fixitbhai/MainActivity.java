@@ -1153,11 +1153,16 @@ public class MainActivity extends AppCompatActivity {
     private void refreshCategoryChips() {
         if (chipGroupCategories == null) return;
 
+        chipGroupCategories.setSingleSelection(true);
+        chipGroupCategories.setSelectionRequired(false);
         chipGroupCategories.removeAllViews();
+
         Chip allChip = new Chip(this);
         allChip.setText("All");
         allChip.setCheckable(true);
         allChip.setChecked(true);
+        allChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B")));
+        allChip.setTextColor(Color.parseColor("#F8FAFC"));
         allChip.setOnClickListener(v -> adapter.filterBy("", getFilterCity()));
         chipGroupCategories.addView(allChip);
 
@@ -1165,6 +1170,8 @@ public class MainActivity extends AppCompatActivity {
         emergencyChip.setText("24/7 Emergency");
         emergencyChip.setCheckable(true);
         emergencyChip.setChipIconResource(R.drawable.ic_info);
+        emergencyChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#312E81")));
+        emergencyChip.setTextColor(Color.parseColor("#818CF8"));
         emergencyChip.setOnClickListener(v -> adapter.filterBy("24/7 Emergency", getFilterCity()));
         chipGroupCategories.addView(emergencyChip);
 
@@ -1179,6 +1186,8 @@ public class MainActivity extends AppCompatActivity {
             Chip categoryChip = new Chip(this);
             categoryChip.setText(categoryName);
             categoryChip.setCheckable(true);
+            categoryChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B")));
+            categoryChip.setTextColor(Color.parseColor("#CBD5E1"));
             categoryChip.setOnClickListener(v -> adapter.filterBy(categoryName, getFilterCity()));
             chipGroupCategories.addView(categoryChip);
         }

@@ -172,8 +172,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(selectQuery, null);
 
         if (cursor.moveToFirst()) {
+            int nameIdx = cursor.getColumnIndex(KEY_NAME);
+            int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
+            int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
+            int cityIdx = cursor.getColumnIndex(KEY_CITY);
+            int ratingIdx = cursor.getColumnIndex(KEY_RATING);
+            int notesIdx = cursor.getColumnIndex(KEY_NOTES);
+            int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
+            int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
+            int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
+            int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
+            int idIdx = cursor.getColumnIndex(KEY_ID);
+
             do {
-                contactList.add(extractContactFromCursor(cursor));
+                contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -205,8 +217,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(query.toString(), args.toArray(new String[0]));
 
         if (cursor.moveToFirst()) {
+            int nameIdx = cursor.getColumnIndex(KEY_NAME);
+            int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
+            int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
+            int cityIdx = cursor.getColumnIndex(KEY_CITY);
+            int ratingIdx = cursor.getColumnIndex(KEY_RATING);
+            int notesIdx = cursor.getColumnIndex(KEY_NOTES);
+            int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
+            int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
+            int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
+            int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
+            int idIdx = cursor.getColumnIndex(KEY_ID);
+
             do {
-                contactList.add(extractContactFromCursor(cursor));
+                contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -214,42 +238,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contactList;
     }
 
-    // Helper method to parse database rows safely
+    // Helper method to parse database rows safely using pre-fetched column indices
     private Contact extractContactFromCursor(Cursor cursor) {
-        int nameIdx = cursor.getColumnIndex(KEY_NAME);
+        return extractContactFromCursor(cursor,
+                cursor.getColumnIndex(KEY_NAME),
+                cursor.getColumnIndex(KEY_PHONE),
+                cursor.getColumnIndex(KEY_CATEGORY),
+                cursor.getColumnIndex(KEY_CITY),
+                cursor.getColumnIndex(KEY_RATING),
+                cursor.getColumnIndex(KEY_NOTES),
+                cursor.getColumnIndex(KEY_DO_NOT_CALL),
+                cursor.getColumnIndex(KEY_IS_CLOUD),
+                cursor.getColumnIndex(KEY_IS_EMERGENCY),
+                cursor.getColumnIndex(KEY_REVIEW_TAGS),
+                cursor.getColumnIndex(KEY_ID));
+    }
+
+    private Contact extractContactFromCursor(Cursor cursor, int nameIdx, int phoneIdx, int catIdx, int cityIdx, int ratingIdx, int notesIdx, int dncIdx, int isCloudIdx, int emgIdx, int revIdx, int idIdx) {
         String name = (nameIdx != -1 && !cursor.isNull(nameIdx)) ? cursor.getString(nameIdx) : "Unknown";
-
-        int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
         String phone = (phoneIdx != -1 && !cursor.isNull(phoneIdx)) ? cursor.getString(phoneIdx) : "";
-
-        int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
         String category = (catIdx != -1 && !cursor.isNull(catIdx)) ? cursor.getString(catIdx) : "General";
-
-        int cityIdx = cursor.getColumnIndex(KEY_CITY);
         String city = (cityIdx != -1 && !cursor.isNull(cityIdx) && !cursor.getString(cityIdx).trim().isEmpty() && !cursor.getString(cityIdx).equalsIgnoreCase("General")) ? cursor.getString(cityIdx) : "Unassigned";
-
-        int ratingIdx = cursor.getColumnIndex(KEY_RATING);
         float rating = (ratingIdx != -1) ? cursor.getFloat(ratingIdx) : 0.0f;
-
-        int notesIdx = cursor.getColumnIndex(KEY_NOTES);
         String notes = (notesIdx != -1 && !cursor.isNull(notesIdx)) ? cursor.getString(notesIdx) : "";
-
-        int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
         boolean dnc = (dncIdx != -1) && (cursor.getInt(dncIdx) == 1);
-
-        int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
         boolean isCloud = (isCloudIdx != -1) && (cursor.getInt(isCloudIdx) == 1);
-
-        int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
         boolean isEmergency = (emgIdx != -1) && (cursor.getInt(emgIdx) == 1);
-
-        int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
         String reviewTags = (revIdx != -1 && !cursor.isNull(revIdx)) ? cursor.getString(revIdx) : "";
 
         Contact contact = new Contact(name, phone, category, city, isCloud);
-
-        int idIdx = cursor.getColumnIndex(KEY_ID);
-        if (idIdx != -1) {
+        if (idIdx != -1 && !cursor.isNull(idIdx)) {
             contact.setId(String.valueOf(cursor.getLong(idIdx)));
         }
 
