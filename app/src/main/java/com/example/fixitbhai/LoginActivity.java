@@ -72,15 +72,11 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         // Configure Google Sign In Options
-        String webClientId = getWebClientId();
-        GoogleSignInOptions.Builder gsoBuilder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail();
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
 
-        if (!TextUtils.isEmpty(webClientId) && !webClientId.contains("defaultwebclient")) {
-            gsoBuilder.requestIdToken(webClientId);
-        }
-
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gsoBuilder.build());
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         googleSignInLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -99,16 +95,9 @@ public class LoginActivity extends AppCompatActivity {
                         }
 
                         if (account != null && account.getEmail() != null) {
-                            String idToken = account.getIdToken();
-                            String displayName = account.getDisplayName() != null ? account.getDisplayName().trim() : "";
-                            if (idToken != null && !idToken.isEmpty()) {
-                                AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-                                signInWithFirebaseCredential(credential, displayName);
-                            } else {
-                                handleGoogleAccountDirectly(account);
-                            }
+                            handleGoogleAccountDirectly(account);
                         } else {
-                            Toast.makeText(LoginActivity.this, "Google Sign-In cancelled or unavailable.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, "Google Sign-In cancelled.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -128,19 +117,6 @@ public class LoginActivity extends AppCompatActivity {
                 currentUser.updateProfile(profileUpdates);
             }
         }
-    }
-
-    private String getWebClientId() {
-        try {
-            int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
-            if (resId != 0) {
-                String id = getString(resId);
-                if (!id.isEmpty() && !id.contains("defaultwebclient")) {
-                    return id;
-                }
-            }
-        } catch (Exception ignored) {}
-        return "150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com";
     }
 
     @Override
@@ -279,32 +255,6 @@ public class LoginActivity extends AppCompatActivity {
                 googleSignInLauncher.launch(signInIntent);
             });
         }
-    }
-
-    private void signInWithFirebaseCredential(AuthCredential credential, String displayName) {
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        updateGoogleDisplayName(displayName);
-                        Toast.makeText(LoginActivity.this, "Google Sign In Successful!", Toast.LENGTH_SHORT).show();
-                        restoreUserCloudBackupAndNavigate();
-                    } else if (task.getException() instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null) {
-                            user.linkWithCredential(credential).addOnCompleteListener(linkTask -> {
-                                updateGoogleDisplayName(displayName);
-                                Toast.makeText(LoginActivity.this, "Google account linked successfully!", Toast.LENGTH_SHORT).show();
-                                restoreUserCloudBackupAndNavigate();
-                            });
-                        } else {
-                            restoreUserCloudBackupAndNavigate();
-                        }
-                    } else {
-                        String err = task.getException() != null ? task.getException().getMessage() : "Google Sign-In failed";
-                        Toast.makeText(LoginActivity.this, "Sign-In: " + err, Toast.LENGTH_SHORT).show();
-                        restoreUserCloudBackupAndNavigate();
-                    }
-                });
     }
 
     private void handleGoogleAccountDirectly(GoogleSignInAccount account) {
