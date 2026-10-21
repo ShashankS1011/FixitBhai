@@ -105,10 +105,8 @@ public class LoginActivity extends AppCompatActivity {
                             GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
                             if (lastAccount != null && lastAccount.getEmail() != null) {
                                 handleGoogleAccountDirectly(lastAccount);
-                            } else if (e.getStatusCode() == 10 || e.getStatusCode() == 12500) {
-                                performBasicGoogleSignIn();
                             } else {
-                                Toast.makeText(LoginActivity.this, "Google Sign-In Cancelled or Unavailable (Code " + e.getStatusCode() + ").", Toast.LENGTH_SHORT).show();
+                                performBasicGoogleSignIn();
                             }
                         }
                     }
