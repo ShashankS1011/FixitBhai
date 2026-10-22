@@ -1,5 +1,7 @@
 package com.example.fixitbhai;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.PropertyName;
 
@@ -70,7 +72,8 @@ public class Contact implements Serializable {
         this.isCloud = isCloud;
     }
 
-    public static String formatWithCountryCode(String rawNumber) {
+    @NonNull
+    public static String formatWithCountryCode(@Nullable String rawNumber) {
         if (rawNumber == null || rawNumber.trim().isEmpty()) return "";
         String cleaned = rawNumber.replaceAll("[^0-9+]", "");
         if (!cleaned.startsWith("+")) {
@@ -87,20 +90,25 @@ public class Contact implements Serializable {
 
     // --- Getters & Setters ---
 
+    @Nullable
     public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public void setId(@Nullable String id) { this.id = id; }
 
+    @Nullable
     public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setName(@Nullable String name) { this.name = name; }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = formatWithCountryCode(phone); }
+    @NonNull
+    public String getPhone() { return phone != null ? phone : ""; }
+    public void setPhone(@Nullable String phone) { this.phone = formatWithCountryCode(phone); }
 
+    @Nullable
     public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public void setCategory(@Nullable String category) { this.category = category; }
 
+    @NonNull
     public String getCity() { return (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
-    public void setCity(String city) { this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
+    public void setCity(@Nullable String city) { this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
 
     public float getRating() { return rating; }
     public void setRating(float rating) { this.rating = rating; }

@@ -73,6 +73,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             db.execSQL("UPDATE " + TABLE_CONTACTS + " SET " + KEY_CITY + " = 'Unassigned' WHERE " + KEY_CITY + " = 'General' OR " + KEY_CITY + " IS NULL OR " + KEY_CITY + " = ''");
             db.execSQL("UPDATE " + TABLE_CLOUD_CACHE + " SET " + KEY_CITY + " = 'Unassigned' WHERE " + KEY_CITY + " = 'General' OR " + KEY_CITY + " IS NULL OR " + KEY_CITY + " = ''");
+            db.execSQL("PRAGMA auto_vacuum = FULL;");
         } catch (Exception ignored) {}
     }
 
