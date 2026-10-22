@@ -13,7 +13,7 @@ credentials = "1.6.0"
 credentialsPlayServicesAuth = "1.6.0"
 googleid = "1.2.1"
 firebaseFirestore = "26.6.0"
-navigation = "2.8.8"
+navigation = "2.10.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
