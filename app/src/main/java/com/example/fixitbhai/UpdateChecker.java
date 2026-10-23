@@ -189,11 +189,12 @@ public class UpdateChecker {
                 }
             };
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(onCompleteReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
-            } else {
-                context.registerReceiver(onCompleteReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                    context,
+                    onCompleteReceiver,
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                    androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            );
 
         } catch (Exception e) {
             Log.e(TAG, "In-app download failed: " + e.getMessage(), e);
