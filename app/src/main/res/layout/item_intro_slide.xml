@@ -31,7 +31,7 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:layout_gravity="center"
-                android:contentDescription="Intro Slide Icon"
+                android:contentDescription="@string/content_desc_intro_icon"
                 android:src="@drawable/ic_fixitbhai_logo"
                 app:tint="@color/accent_blue" />
         </com.google.android.material.card.MaterialCardView>

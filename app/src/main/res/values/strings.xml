@@ -33,4 +33,11 @@
     <string name="dialog_city_title">City Selection</string>
     <string name="dialog_add_custom_city">Add Custom City</string>
     <string name="default_web_client_id">150320496415-i306450f29of8r15c3juovlv3lsbr8g5.apps.googleusercontent.com</string>
+    <string name="intro_title">FixitBhai Guide</string>
+    <string name="intro_skip">Skip Tour</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_get_started">Get Started</string>
+    <string name="content_desc_intro_icon">Intro Slide Icon</string>
+    <string name="content_desc_admin_pending">Pending Admin Requests</string>
+    <string name="content_desc_admin_crash_reports">Admin Crash Reports</string>
 </resources>
