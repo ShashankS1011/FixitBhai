@@ -26,8 +26,8 @@ Never lose the contact number of a verified local technician again or confuse th
 
 - **Smart Phonebook Scanner:** Automatically discovers repair and maintenance contacts from your phonebook using intelligent keyword matching while keeping your personal contacts 100% private and local.
 - **Interactive Onboarding Walkthrough:** A sleek Material 3 carousel (`IntroActivity`) guiding new users step-by-step through local contact scanning, city filtering, cloud moderation, and quick actions.
-- **Secure Cloud Publication & Admin Moderation Queue:** Regular users can submit cloud publication and deletion requests, which are securely reviewed and approved/rejected via an in-app Admin Moderation Panel (complete with requester name and email tracking).
-- **SQLite Offline Cloud Directory Caching:** Public cloud directory contacts fetched from Firestore are cached locally in SQLite (`cloud_cache` table) for instant offline browsing and resilience against poor connectivity.
+- **Secure Cloud & City Moderation Queue:** Regular users can submit contact publication/deletion requests and custom city creation requests (`ADD_CITY`), which are securely reviewed and approved/rejected via an in-app Admin Moderation Panel (complete with requester name and email tracking).
+- **Universal Public Cities & Offline Directory Caching:** Approved public cities (`public_cities` collection) and cloud contacts fetched from Firestore are cached locally in SQLite (`cloud_cache` table) for instant offline browsing and universal display across all devices.
 - **Modern High-Contrast Dark UI:** Sleek, high-contrast dark design system built with Material 3 components, avatar initial circles, touch ripple feedback, and custom status pills.
 - **Dynamic Category & City Filtering:** Instant filtering by service trade and target city directories with stable alphabetical name sorting and city alias matching (e.g. *Prayagraj / Allahabad*).
 - **Blacklist / Do Not Call Warning:** Mark bad service providers or unreliable technicians with a visible warning banner to prevent accidental re-hiring.

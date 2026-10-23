@@ -188,14 +188,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<String> getDistinctCities() {
         List<String> cities = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT DISTINCT " + KEY_CITY + " FROM " + TABLE_CONTACTS + " WHERE " + KEY_CITY + " IS NOT NULL AND TRIM(" + KEY_CITY + ") != '' ORDER BY " + KEY_CITY + " ASC", null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                cities.add(cursor.getString(0));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
+        try (Cursor cursor = db.rawQuery("SELECT DISTINCT " + KEY_CITY + " FROM " + TABLE_CONTACTS + " WHERE " + KEY_CITY + " IS NOT NULL AND TRIM(" + KEY_CITY + ") != '' ORDER BY " + KEY_CITY + " ASC", null)) {
+            if (cursor.moveToFirst()) {
+                do {
+                    cities.add(cursor.getString(0));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception ignored) {}
         db.close();
         return cities;
     }
@@ -205,26 +204,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String selectQuery = "SELECT * FROM " + TABLE_CONTACTS + " ORDER BY " + KEY_CITY + " ASC, " + KEY_NAME + " ASC";
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
+        try (Cursor cursor = db.rawQuery(selectQuery, null)) {
+            if (cursor.moveToFirst()) {
+                int nameIdx = cursor.getColumnIndex(KEY_NAME);
+                int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
+                int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
+                int cityIdx = cursor.getColumnIndex(KEY_CITY);
+                int ratingIdx = cursor.getColumnIndex(KEY_RATING);
+                int notesIdx = cursor.getColumnIndex(KEY_NOTES);
+                int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
+                int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
+                int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
+                int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
+                int idIdx = cursor.getColumnIndex(KEY_ID);
 
-        if (cursor.moveToFirst()) {
-            int nameIdx = cursor.getColumnIndex(KEY_NAME);
-            int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
-            int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
-            int cityIdx = cursor.getColumnIndex(KEY_CITY);
-            int ratingIdx = cursor.getColumnIndex(KEY_RATING);
-            int notesIdx = cursor.getColumnIndex(KEY_NOTES);
-            int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
-            int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
-            int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
-            int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
-            int idIdx = cursor.getColumnIndex(KEY_ID);
-
-            do {
-                contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
+                do {
+                    contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception ignored) {}
         db.close();
         return contactList;
     }
@@ -250,26 +248,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         query.append(" ORDER BY ").append(KEY_CITY).append(" ASC, ").append(KEY_NAME).append(" ASC");
-        Cursor cursor = db.rawQuery(query.toString(), args.toArray(new String[0]));
+        try (Cursor cursor = db.rawQuery(query.toString(), args.toArray(new String[0]))) {
+            if (cursor.moveToFirst()) {
+                int nameIdx = cursor.getColumnIndex(KEY_NAME);
+                int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
+                int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
+                int cityIdx = cursor.getColumnIndex(KEY_CITY);
+                int ratingIdx = cursor.getColumnIndex(KEY_RATING);
+                int notesIdx = cursor.getColumnIndex(KEY_NOTES);
+                int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
+                int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
+                int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
+                int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
+                int idIdx = cursor.getColumnIndex(KEY_ID);
 
-        if (cursor.moveToFirst()) {
-            int nameIdx = cursor.getColumnIndex(KEY_NAME);
-            int phoneIdx = cursor.getColumnIndex(KEY_PHONE);
-            int catIdx = cursor.getColumnIndex(KEY_CATEGORY);
-            int cityIdx = cursor.getColumnIndex(KEY_CITY);
-            int ratingIdx = cursor.getColumnIndex(KEY_RATING);
-            int notesIdx = cursor.getColumnIndex(KEY_NOTES);
-            int dncIdx = cursor.getColumnIndex(KEY_DO_NOT_CALL);
-            int isCloudIdx = cursor.getColumnIndex(KEY_IS_CLOUD);
-            int emgIdx = cursor.getColumnIndex(KEY_IS_EMERGENCY);
-            int revIdx = cursor.getColumnIndex(KEY_REVIEW_TAGS);
-            int idIdx = cursor.getColumnIndex(KEY_ID);
-
-            do {
-                contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
+                do {
+                    contactList.add(extractContactFromCursor(cursor, nameIdx, phoneIdx, catIdx, cityIdx, ratingIdx, notesIdx, dncIdx, isCloudIdx, emgIdx, revIdx, idIdx));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception ignored) {}
         db.close();
         return contactList;
     }
@@ -346,29 +343,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Contact> getCachedCloudContacts(String filterCity) {
         List<Contact> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor;
-        if (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All")) {
-            cursor = db.rawQuery("SELECT * FROM " + TABLE_CLOUD_CACHE, null);
-        } else {
-            cursor = db.rawQuery("SELECT * FROM " + TABLE_CLOUD_CACHE + " WHERE " + KEY_CITY + " LIKE ?", new String[]{filterCity.trim()});
-        }
-        if (cursor != null) {
+        String sql = (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All"))
+                ? "SELECT * FROM " + TABLE_CLOUD_CACHE
+                : "SELECT * FROM " + TABLE_CLOUD_CACHE + " WHERE " + KEY_CITY + " LIKE ?";
+        String[] selectionArgs = (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All"))
+                ? null
+                : new String[]{filterCity.trim()};
+
+        try (Cursor cursor = db.rawQuery(sql, selectionArgs)) {
             if (cursor.moveToFirst()) {
                 do {
                     list.add(extractContactFromCursor(cursor));
                 } while (cursor.moveToNext());
             }
-            cursor.close();
-        }
+        } catch (Exception ignored) {}
         db.close();
         return list;
     }
 
     public boolean contactExists(String phone) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + KEY_ID + " FROM " + TABLE_CONTACTS + " WHERE " + KEY_PHONE + "=?", new String[]{phone});
-        boolean exists = (cursor.getCount() > 0);
-        cursor.close();
+        boolean exists = false;
+        try (Cursor cursor = db.rawQuery("SELECT " + KEY_ID + " FROM " + TABLE_CONTACTS + " WHERE " + KEY_PHONE + "=?", new String[]{phone})) {
+            exists = (cursor.getCount() > 0);
+        } catch (Exception ignored) {}
         db.close();
         return exists;
     }

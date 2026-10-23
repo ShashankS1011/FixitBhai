@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.fixitbhai"
         minSdk = 24
         targetSdk = 37
-        versionCode = 91
-        versionName = "20.1.0"
+        versionCode = 92
+        versionName = "21.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,7 +59,7 @@ android {
 
 dependencies {
     // Import the Firebase BoM to automatically manage versions
-    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
 
     // Firebase dependencies
     implementation(libs.firebase.auth)
