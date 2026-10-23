@@ -358,23 +358,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAdminModerationDialog(List<DocumentSnapshot> pendingDocs) {
-        List<DocumentSnapshot> addRequests = new ArrayList<>();
-        List<DocumentSnapshot> deleteRequests = new ArrayList<>();
+        List<DocumentSnapshot> addContactRequests = new ArrayList<>();
+        List<DocumentSnapshot> deleteContactRequests = new ArrayList<>();
+        List<DocumentSnapshot> addCityRequests = new ArrayList<>();
 
         if (pendingDocs != null) {
             for (DocumentSnapshot doc : pendingDocs) {
                 String action = doc.getString("action");
                 if (action != null && action.equalsIgnoreCase("DELETE")) {
-                    deleteRequests.add(doc);
+                    deleteContactRequests.add(doc);
+                } else if (action != null && action.equalsIgnoreCase("ADD_CITY")) {
+                    addCityRequests.add(doc);
                 } else {
-                    addRequests.add(doc);
+                    addContactRequests.add(doc);
                 }
             }
         }
 
         CharSequence[] tabOptions = {
-                "Add Requests (" + addRequests.size() + ")",
-                "Delete Requests (" + deleteRequests.size() + ")",
+                "Add Contact Requests (" + addContactRequests.size() + ")",
+                "Delete Contact Requests (" + deleteContactRequests.size() + ")",
+                "Add City Requests (" + addCityRequests.size() + ")",
                 "Clear Public Cloud Directory (Admin)"
         };
 
@@ -382,18 +386,24 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Admin Moderation Panel")
                 .setItems(tabOptions, (dialog, which) -> {
                     if (which == 0) {
-                        if (addRequests.isEmpty()) {
-                            Toast.makeText(MainActivity.this, "No pending add requests.", Toast.LENGTH_SHORT).show();
+                        if (addContactRequests.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "No pending add contact requests.", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        showRequestListDialog(addRequests);
+                        showRequestListDialog(addContactRequests);
                     } else if (which == 1) {
-                        if (deleteRequests.isEmpty()) {
-                            Toast.makeText(MainActivity.this, "No pending delete requests.", Toast.LENGTH_SHORT).show();
+                        if (deleteContactRequests.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "No pending delete contact requests.", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        showRequestListDialog(deleteRequests);
+                        showRequestListDialog(deleteContactRequests);
                     } else if (which == 2) {
+                        if (addCityRequests.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "No pending city creation requests.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        showRequestListDialog(addCityRequests);
+                    } else if (which == 3) {
                         new MaterialAlertDialogBuilder(MainActivity.this)
                                 .setTitle("Clear Public Cloud Directory")
                                 .setMessage("Are you sure you want to permanently delete all public shared contacts from the cloud directory?")
@@ -478,9 +488,21 @@ public class MainActivity extends AppCompatActivity {
 
                     new MaterialAlertDialogBuilder(MainActivity.this)
                             .setTitle("Review " + finalAction + " Request")
-                            .setMessage("Contact Name: " + name + "\nPhone: " + phone + "\nCity: " + city + "\n\nRequested By User Email:\n" + (email != null ? email : "Unknown"))
+                            .setMessage(finalAction.equalsIgnoreCase("ADD_CITY") ? "Requested City Name: " + city + "\n\nRequested By User Email:\n" + (email != null ? email : "Unknown") : "Contact Name: " + name + "\nPhone: " + phone + "\nCity: " + city + "\n\nRequested By User Email:\n" + (email != null ? email : "Unknown"))
                             .setPositiveButton("Approve & Execute", (d, w) -> {
-                                if (finalAction.equalsIgnoreCase("DELETE")) {
+                                if (finalAction.equalsIgnoreCase("ADD_CITY")) {
+                                    if (city != null && !city.trim().isEmpty()) {
+                                        java.util.Map<String, Object> cityMap = new java.util.HashMap<>();
+                                        cityMap.put("name", city.trim());
+                                        cityMap.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                                        firestore.collection("public_cities").document(city.trim()).set(cityMap)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    firestore.collection("moderation_requests").document(reqId).update("status", "APPROVED");
+                                                    Toast.makeText(MainActivity.this, "City " + city + " approved & published for all users!", Toast.LENGTH_SHORT).show();
+                                                    checkPendingModerationRequests();
+                                                });
+                                    }
+                                } else if (finalAction.equalsIgnoreCase("DELETE")) {
                                     if (!cleanPhone.isEmpty() && city != null) {
                                         firestore.collection("cities").document(city).collection("contacts").document(cleanPhone).delete()
                                                 .addOnSuccessListener(aVoid -> {
@@ -776,7 +798,7 @@ public class MainActivity extends AppCompatActivity {
         List<String> cityList = new ArrayList<>();
         cityList.add("All Cities");
         for (String c : distinctCities) {
-            if (!cityList.contains(c)) {
+            if (!cityList.contains(c) && !c.equalsIgnoreCase("Unassigned")) {
                 cityList.add(c);
             }
         }
@@ -791,8 +813,25 @@ public class MainActivity extends AppCompatActivity {
                 cityList.add(preset);
             }
         }
-        cityList.add("➕ Add Custom City...");
 
+        firestore.collection("public_cities").get().addOnSuccessListener(snapshots -> {
+            if (snapshots != null && !snapshots.isEmpty()) {
+                for (DocumentSnapshot doc : snapshots) {
+                    String pubCity = doc.getString("name");
+                    if (pubCity != null && !pubCity.trim().isEmpty() && !cityList.contains(pubCity.trim())) {
+                        cityList.add(pubCity.trim());
+                    }
+                }
+            }
+            cityList.add("➕ Add Custom City...");
+            renderCityDialogList(cityList);
+        }).addOnFailureListener(e -> {
+            cityList.add("➕ Add Custom City...");
+            renderCityDialogList(cityList);
+        });
+    }
+
+    private void renderCityDialogList(List<String> cityList) {
         final String[] cityArray = cityList.toArray(new String[0]);
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_city_select, null);
@@ -864,28 +903,53 @@ public class MainActivity extends AppCompatActivity {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Add Custom City")
                 .setView(tilCustomCity)
-                .setPositiveButton("Set City", (dialog, which) -> {
+                .setPositiveButton("Submit City", (dialog, which) -> {
                     String input = etCustomCity.getText() != null ? etCustomCity.getText().toString().trim() : "";
                     if (!input.isEmpty()) {
-                        selectedCity = capitalizeWords(input);
-                        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-                        prefs.edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                        String newCity = capitalizeWords(input);
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        String userEmail = user != null && user.getEmail() != null ? user.getEmail().trim() : "";
+                        boolean isAdmin = userEmail != null && ContactAdapter.isAdminEmail(userEmail);
 
-                        if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+                        if (isAdmin) {
+                            java.util.Map<String, Object> cityMap = new java.util.HashMap<>();
+                            cityMap.put("name", newCity);
+                            cityMap.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                            firestore.collection("public_cities").document(newCity).set(cityMap);
 
-                        if (dbHelper != null) {
-                            List<Contact> allLocal = dbHelper.getAllContacts();
-                            contactList.clear();
-                            contactList.addAll(allLocal);
-                            if (adapter != null) {
-                                adapter.updateData(contactList);
-                                adapter.filterBy("", getFilterCity());
-                            }
-                            refreshCategoryChips();
+                            selectedCity = newCity;
+                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+                            Toast.makeText(MainActivity.this, "City " + newCity + " published for all users!", Toast.LENGTH_SHORT).show();
+                        } else if (user != null) {
+                            java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+                            requestMap.put("action", "ADD_CITY");
+                            requestMap.put("city", newCity);
+                            requestMap.put("name", newCity);
+                            requestMap.put("uploaderEmail", userEmail);
+                            requestMap.put("uploaderUid", user.getUid());
+                            requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                            requestMap.put("status", "PENDING");
+
+                            firestore.collection("moderation_requests").add(requestMap)
+                                    .addOnSuccessListener(docRef -> {
+                                        new MaterialAlertDialogBuilder(MainActivity.this)
+                                                .setTitle("City Request Submitted! 🎉")
+                                                .setMessage("Your request to add city '" + newCity + "' has been submitted successfully.\n\nIt is now waiting for admin approval before showing globally.")
+                                                .setPositiveButton("Got it", (d, w) -> d.dismiss())
+                                                .show();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        selectedCity = newCity;
+                                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                                        if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+                                        Toast.makeText(MainActivity.this, "City set locally to " + newCity, Toast.LENGTH_SHORT).show();
+                                    });
+                        } else {
+                            selectedCity = newCity;
+                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
                         }
-
-                        checkEmptyState();
-                        Toast.makeText(MainActivity.this, "Selected City: " + selectedCity, Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("Cancel", null)
