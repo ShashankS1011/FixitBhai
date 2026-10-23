@@ -126,6 +126,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return id;
     }
 
+    public void addContactsBatch(List<Contact> contacts) {
+        if (contacts == null || contacts.isEmpty()) return;
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            for (Contact contact : contacts) {
+                if (contact == null) continue;
+                ContentValues values = new ContentValues();
+                values.put(KEY_NAME, contact.getName());
+                values.put(KEY_PHONE, contact.getPhone());
+                values.put(KEY_CATEGORY, contact.getCategory());
+                values.put(KEY_CITY, contact.getCity());
+                values.put(KEY_RATING, contact.getRating());
+                values.put(KEY_NOTES, contact.getNotes());
+                values.put(KEY_DO_NOT_CALL, contact.isDoNotCall() ? 1 : 0);
+                values.put(KEY_IS_CLOUD, contact.isCloud() ? 1 : 0);
+                values.put(KEY_IS_EMERGENCY, contact.isEmergency() ? 1 : 0);
+                values.put(KEY_REVIEW_TAGS, contact.getReviewTags());
+                db.insertWithOnConflict(TABLE_CONTACTS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+    }
+
     public void updateContactDetails(String phone, float rating, String notes, boolean doNotCall) {
         updateContactDetails(phone, rating, notes, doNotCall, false, "");
     }

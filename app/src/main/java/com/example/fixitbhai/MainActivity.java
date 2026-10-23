@@ -1292,6 +1292,7 @@ public class MainActivity extends AppCompatActivity {
             Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
 
             int importedCount = 0;
+            List<Contact> scannedBatch = new ArrayList<>();
 
             if (cursor != null) {
                 int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
@@ -1354,9 +1355,9 @@ public class MainActivity extends AppCompatActivity {
                         Contact newContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
                         existingNumbers.add(formattedNumber);
                         existingNames.add(lowerName);
+                        scannedBatch.add(newContact);
                         importedCount++;
 
-                        dbHelper.addContact(newContact);
                         if (shouldSyncCloud && currentUserId != null) {
                             String uploaderEmail = currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ? currentUser.getEmail() : "Verified Member";
                             Contact backupContact = new Contact(name, formattedNumber, matchedCategory, detectedCity, false);
@@ -1369,6 +1370,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 cursor.close();
+            }
+
+            if (!scannedBatch.isEmpty()) {
+                dbHelper.addContactsBatch(scannedBatch);
             }
 
             final int finalImportedCount = importedCount;
