@@ -71,8 +71,9 @@ public class LoginActivity extends AppCompatActivity {
             btnForgotPassword.setOnClickListener(v -> performForgotPassword());
         }
 
-        // Configure Google Sign In Options
+        // Configure Google Sign In Options (Matching MIND architecture)
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
 
@@ -83,21 +84,21 @@ public class LoginActivity extends AppCompatActivity {
                 result -> {
                     if (result.getData() != null) {
                         Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                        GoogleSignInAccount account = null;
                         try {
-                            account = task.getResult(ApiException.class);
+                            GoogleSignInAccount account = task.getResult(ApiException.class);
+                            if (account != null && account.getIdToken() != null) {
+                                firebaseAuthWithGoogle(account);
+                            } else if (account != null && account.getEmail() != null) {
+                                handleGoogleAccountDirectly(account);
+                            }
                         } catch (ApiException e) {
                             Log.w(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
-                        }
-
-                        if (account == null) {
-                            account = GoogleSignIn.getLastSignedInAccount(this);
-                        }
-
-                        if (account != null && account.getEmail() != null) {
-                            handleGoogleAccountDirectly(account);
-                        } else {
-                            Toast.makeText(LoginActivity.this, "Google Sign-In cancelled.", Toast.LENGTH_SHORT).show();
+                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
+                            if (lastAccount != null && lastAccount.getEmail() != null) {
+                                handleGoogleAccountDirectly(lastAccount);
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Google Sign-In failed (Code " + e.getStatusCode() + "). Please verify SHA-1 in Firebase Console.", Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
                 });
@@ -255,6 +256,22 @@ public class LoginActivity extends AppCompatActivity {
                 googleSignInLauncher.launch(signInIntent);
             });
         }
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        if (acct == null || acct.getIdToken() == null) return;
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        String displayName = acct.getDisplayName() != null ? acct.getDisplayName().trim() : "";
+                        updateGoogleDisplayName(displayName);
+                        Toast.makeText(LoginActivity.this, "Google Sign In Successful!", Toast.LENGTH_SHORT).show();
+                        restoreUserCloudBackupAndNavigate();
+                    } else {
+                        handleGoogleAccountDirectly(acct);
+                    }
+                });
     }
 
     private void handleGoogleAccountDirectly(GoogleSignInAccount account) {
