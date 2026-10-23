@@ -71,8 +71,9 @@ public class LoginActivity extends AppCompatActivity {
             btnForgotPassword.setOnClickListener(v -> performForgotPassword());
         }
 
-        // Configure Google Sign-In Options (Basic Email Sign-In without ID Token / SHA-1 restriction)
+        // Configure Google Sign In Options (Official Firebase Auth Google Sign-In)
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
 
@@ -82,9 +83,9 @@ public class LoginActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getData() != null) {
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                         GoogleSignInAccount account = null;
                         try {
-                            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                             account = task.getResult(ApiException.class);
                         } catch (ApiException e) {
                             Log.w(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
@@ -107,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
                                 handleGoogleAccountDirectly(account);
                             }
                         } else {
-                            Toast.makeText(LoginActivity.this, "Google Sign-In unavailable. Please sign in with Email & Password.", Toast.LENGTH_LONG).show();
+                            Toast.makeText(LoginActivity.this, "Google Sign-In requires SHA-1 configuration. Please sign in with email and password below.", Toast.LENGTH_LONG).show();
                             if (tvLoginSubtitle != null) {
                                 tvLoginSubtitle.setText("Google Sign-In requires SHA-1 configuration. Please sign in with email and password below.");
                                 tvLoginSubtitle.setTextColor(android.graphics.Color.parseColor("#EF4444"));
