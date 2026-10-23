@@ -96,7 +96,11 @@ public class LoginActivity extends AppCompatActivity {
                             if (lastAccount != null && lastAccount.getEmail() != null) {
                                 handleGoogleAccountDirectly(lastAccount);
                             } else {
-                                Toast.makeText(LoginActivity.this, "Google Sign-In failed (Code " + e.getStatusCode() + "). Please verify SHA-1 in Firebase Console.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(LoginActivity.this, "Google Sign-In unavailable (Code " + e.getStatusCode() + "). Please sign in with Email & Password.", Toast.LENGTH_LONG).show();
+                                if (tvLoginSubtitle != null) {
+                                    tvLoginSubtitle.setText("Google Sign-In requires SHA-1 configuration. Please sign in with email and password below.");
+                                    tvLoginSubtitle.setTextColor(android.graphics.Color.parseColor("#EF4444"));
+                                }
                             }
                         }
                     }
