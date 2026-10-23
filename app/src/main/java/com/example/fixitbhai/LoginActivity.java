@@ -82,25 +82,35 @@ public class LoginActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getData() != null) {
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                        GoogleSignInAccount account = null;
                         try {
-                            GoogleSignInAccount account = task.getResult(ApiException.class);
-                            if (account != null && account.getIdToken() != null) {
-                                firebaseAuthWithGoogle(account);
-                            } else if (account != null && account.getEmail() != null) {
-                                handleGoogleAccountDirectly(account);
-                            }
+                            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                            account = task.getResult(ApiException.class);
                         } catch (ApiException e) {
                             Log.w(TAG, "Google Sign In ApiException Code: " + e.getStatusCode(), e);
-                            GoogleSignInAccount lastAccount = GoogleSignIn.getLastSignedInAccount(this);
-                            if (lastAccount != null && lastAccount.getEmail() != null) {
-                                handleGoogleAccountDirectly(lastAccount);
-                            } else {
-                                Toast.makeText(LoginActivity.this, "Google Sign-In unavailable (Code " + e.getStatusCode() + "). Please sign in with Email & Password.", Toast.LENGTH_LONG).show();
-                                if (tvLoginSubtitle != null) {
-                                    tvLoginSubtitle.setText("Google Sign-In requires SHA-1 configuration. Please sign in with email and password below.");
-                                    tvLoginSubtitle.setTextColor(android.graphics.Color.parseColor("#EF4444"));
+                            try {
+                                com.google.android.gms.auth.api.signin.GoogleSignInResult signInResult = com.google.android.gms.auth.api.Auth.GoogleSignInApi.getSignInResultFromIntent(result.getData());
+                                if (signInResult != null) {
+                                    account = signInResult.getSignInAccount();
                                 }
+                            } catch (Exception ignored) {}
+                        }
+
+                        if (account == null) {
+                            account = GoogleSignIn.getLastSignedInAccount(this);
+                        }
+
+                        if (account != null && account.getEmail() != null) {
+                            if (account.getIdToken() != null && !account.getIdToken().isEmpty()) {
+                                firebaseAuthWithGoogle(account);
+                            } else {
+                                handleGoogleAccountDirectly(account);
+                            }
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Google Sign-In unavailable. Please sign in with Email & Password.", Toast.LENGTH_LONG).show();
+                            if (tvLoginSubtitle != null) {
+                                tvLoginSubtitle.setText("Google Sign-In requires SHA-1 configuration. Please sign in with email and password below.");
+                                tvLoginSubtitle.setTextColor(android.graphics.Color.parseColor("#EF4444"));
                             }
                         }
                     }
