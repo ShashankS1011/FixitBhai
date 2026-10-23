@@ -453,7 +453,11 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     if (progressBar != null) progressBar.setVisibility(View.GONE);
-                    Toast.makeText(MainActivity.this, "Error querying cloud: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    new MaterialAlertDialogBuilder(MainActivity.this)
+                            .setTitle("Firestore Rules Notice")
+                            .setMessage("Collection group queries require rules enabling recursive reads in Firebase Console:\n\nmatch /{path=**}/contacts/{contactId} {\n  allow read: if true;\n}")
+                            .setPositiveButton("Got it", null)
+                            .show();
                 });
     }
 
