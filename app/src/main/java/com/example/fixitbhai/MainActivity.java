@@ -132,7 +132,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
         contactList = new ArrayList<>();
 
-        loadSavedState();
+        boolean privacyAccepted = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean("KEY_PRIVACY_POLICY_ACCEPTED", false);
+        if (privacyAccepted) {
+            loadSavedState();
+        }
 
         if (chipCitySelect != null) {
             chipCitySelect.setText("City: " + selectedCity);
@@ -753,6 +756,11 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Logout")
                 .setMessage("Are you sure you want to log out?")
                 .setPositiveButton("Logout", (dialog, which) -> {
+                    dbHelper.deleteAllContacts();
+                    contactList.clear();
+                    saveContactsToStorage();
+                    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                    prefs.edit().putBoolean("KEY_PRIVACY_POLICY_ACCEPTED", false).apply();
                     FirebaseAuth.getInstance().signOut();
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -960,6 +968,7 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("I Agree & Accept", (dialog, which) -> {
                     prefs.edit().putBoolean("KEY_PRIVACY_POLICY_ACCEPTED", true).apply();
                     dialog.dismiss();
+                    loadSavedState();
                     checkContactPermissionAndScan(showToast);
                 })
                 .setNegativeButton("Decline & Exit", (dialog, which) -> finishAffinity())
@@ -1054,6 +1063,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkContactPermissionAndScan(boolean showToastIfNoNew) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean privacyAccepted = prefs.getBoolean("KEY_PRIVACY_POLICY_ACCEPTED", false);
+        if (!privacyAccepted) {
+            showPrivacyPolicyAgreementDialog(showToastIfNoNew);
+            return;
+        }
+
         restoreUserCloudBackup();
 
         if (!prefs.getBoolean(KEY_PREF_SET, false)) {

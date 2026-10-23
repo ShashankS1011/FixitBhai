@@ -281,6 +281,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contact;
     }
 
+    public void deleteAllContacts() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.delete(TABLE_CONTACTS, null, null);
+            db.delete(TABLE_CLOUD_CACHE, null, null);
+        } catch (Exception ignored) {}
+        db.close();
+    }
+
     public void cacheCloudContact(Contact contact) {
         if (contact == null || contact.getPhone() == null) return;
         SQLiteDatabase db = this.getWritableDatabase();
