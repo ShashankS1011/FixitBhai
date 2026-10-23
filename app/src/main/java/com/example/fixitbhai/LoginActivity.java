@@ -71,9 +71,8 @@ public class LoginActivity extends AppCompatActivity {
             btnForgotPassword.setOnClickListener(v -> performForgotPassword());
         }
 
-        // Configure Google Sign In Options (Matching MIND architecture)
+        // Configure Google Sign-In Options (Basic Email Sign-In without ID Token / SHA-1 restriction)
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
 
