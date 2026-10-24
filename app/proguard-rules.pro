@@ -18,6 +18,9 @@
 
 # 3. Firebase Authentication & Firestore Suppressions
 -keep class com.google.firebase.** { *; }
+-keepclassmembers class com.google.android.gms.common.api.ApiException {
+    public int getStatusCode();
+}
 -dontwarn com.google.firebase.firestore.**
 -dontwarn com.google.gson.**
 

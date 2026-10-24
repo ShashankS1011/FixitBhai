@@ -72,12 +72,15 @@ public class Contact implements Serializable {
         this.isCloud = isCloud;
     }
 
+    private static final java.util.regex.Pattern CLEAN_PHONE_PATTERN = java.util.regex.Pattern.compile("[^0-9+]");
+    private static final java.util.regex.Pattern LEADING_ZERO_PATTERN = java.util.regex.Pattern.compile("^0+");
+
     @NonNull
     public static String formatWithCountryCode(@Nullable String rawNumber) {
         if (rawNumber == null || rawNumber.trim().isEmpty()) return "";
-        String cleaned = rawNumber.replaceAll("[^0-9+]", "");
+        String cleaned = CLEAN_PHONE_PATTERN.matcher(rawNumber).replaceAll("");
         if (!cleaned.startsWith("+")) {
-            String digitsOnly = cleaned.replaceAll("^0+", "");
+            String digitsOnly = LEADING_ZERO_PATTERN.matcher(cleaned).replaceAll("");
             if (digitsOnly.length() == 10) {
                 return "+91" + digitsOnly;
             } else if (digitsOnly.startsWith("91") && digitsOnly.length() == 12) {
