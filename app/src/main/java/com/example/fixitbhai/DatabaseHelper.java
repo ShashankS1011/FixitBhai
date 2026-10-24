@@ -199,9 +199,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return cities;
     }
 
+    private static final String ALL_COLUMNS = "id, name, phone, category, city, rating, notes, do_not_call, is_cloud, is_emergency, review_tags";
+
     public List<Contact> getAllContacts() {
         List<Contact> contactList = new ArrayList<>();
-        String selectQuery = "SELECT * FROM " + TABLE_CONTACTS + " ORDER BY " + KEY_CITY + " ASC, " + KEY_NAME + " ASC";
+        String selectQuery = "SELECT " + ALL_COLUMNS + " FROM " + TABLE_CONTACTS + " ORDER BY " + KEY_CITY + " ASC, " + KEY_NAME + " ASC";
 
         SQLiteDatabase db = this.getReadableDatabase();
         try (Cursor cursor = db.rawQuery(selectQuery, null)) {
@@ -344,8 +346,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Contact> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         String sql = (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All"))
-                ? "SELECT * FROM " + TABLE_CLOUD_CACHE
-                : "SELECT * FROM " + TABLE_CLOUD_CACHE + " WHERE " + KEY_CITY + " LIKE ?";
+                ? "SELECT " + ALL_COLUMNS + " FROM " + TABLE_CLOUD_CACHE
+                : "SELECT " + ALL_COLUMNS + " FROM " + TABLE_CLOUD_CACHE + " WHERE " + KEY_CITY + " LIKE ?";
         String[] selectionArgs = (filterCity == null || filterCity.trim().isEmpty() || filterCity.equalsIgnoreCase("All Cities") || filterCity.equalsIgnoreCase("All"))
                 ? null
                 : new String[]{filterCity.trim()};

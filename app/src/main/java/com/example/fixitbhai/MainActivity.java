@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_CONTACT_LIST = "SavedContacts";
     private static final String KEY_SELECTED_CITY = "SelectedCity";
     private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues/new";
+    private static final Gson GSON_INSTANCE = new Gson();
     public static final String KEY_CLOUD_SYNC_PREF = "CloudSyncEnabled";
     public static final String KEY_PREF_SET = "CloudSyncPrefSet";
     private static final int PERMISSION_REQUEST_READ_CONTACTS = 100;
@@ -1211,9 +1212,8 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 String json = prefs.getString(KEY_CONTACT_LIST, null);
                 if (json != null) {
-                    Gson gson = new Gson();
                     Type type = new TypeToken<ArrayList<Contact>>() {}.getType();
-                    List<Contact> savedList = gson.fromJson(json, type);
+                    List<Contact> savedList = GSON_INSTANCE.fromJson(json, type);
                     if (savedList != null) {
                         contactList.clear();
                         contactList.addAll(savedList);
@@ -1228,8 +1228,7 @@ public class MainActivity extends AppCompatActivity {
     private void saveContactsToStorage() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        Gson gson = new Gson();
-        editor.putString(KEY_CONTACT_LIST, gson.toJson(contactList));
+        editor.putString(KEY_CONTACT_LIST, GSON_INSTANCE.toJson(contactList));
         editor.apply();
     }
 
