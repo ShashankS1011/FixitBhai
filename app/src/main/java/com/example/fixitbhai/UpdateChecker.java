@@ -39,10 +39,8 @@ public class UpdateChecker {
     }
 
     public static void checkForUpdates(Context context, boolean showToastIfLatest, UpdateCheckCallback callback) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        executor.execute(() -> {
+        final Context appContext = context.getApplicationContext();
+        AppExecutors.getInstance().networkIO().execute(() -> {
             boolean hasUpdate = false;
             String latestTag = "";
             String downloadUrl = "";
@@ -94,19 +92,17 @@ public class UpdateChecker {
             final String finalLatestTag = latestTag;
             final String finalDownloadUrl = downloadUrl;
 
-            handler.post(() -> {
+            AppExecutors.getInstance().mainThread().execute(() -> {
                 if (callback != null) {
                     callback.onCheckComplete(finalHasUpdate, finalLatestTag, finalDownloadUrl);
                 }
 
                 if (finalHasUpdate) {
-                    showUpdateDialog(context, finalLatestTag, finalDownloadUrl);
+                    showUpdateDialog(appContext, finalLatestTag, finalDownloadUrl);
                 } else if (showToastIfLatest) {
-                    Toast.makeText(context, "FixitBhai is up to date! (v" + BuildConfig.VERSION_NAME + ")", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(appContext, "FixitBhai is up to date! (v" + BuildConfig.VERSION_NAME + ")", Toast.LENGTH_SHORT).show();
                 }
             });
-
-            executor.shutdown();
         });
     }
 
