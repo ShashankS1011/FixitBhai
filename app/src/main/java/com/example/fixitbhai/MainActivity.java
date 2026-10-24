@@ -21,6 +21,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -75,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_SELECTED_CITY = "SelectedCity";
     private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues/new";
     private static final Gson GSON_INSTANCE = new Gson();
+    private static final android.content.res.ColorStateList CHIP_BG_COLOR = android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B"));
+    private static final android.content.res.ColorStateList CHIP_EMERGENCY_BG_COLOR = android.content.res.ColorStateList.valueOf(Color.parseColor("#312E81"));
     public static final String KEY_CLOUD_SYNC_PREF = "CloudSyncEnabled";
     public static final String KEY_PREF_SET = "CloudSyncPrefSet";
     private static final int PERMISSION_REQUEST_READ_CONTACTS = 100;
@@ -304,6 +307,16 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         }
         prefs.edit().putString("KEY_LAST_SEEN_VERSION", currentVersion).apply();
+    }
+
+    private void hideSoftKeyboard() {
+        View view = getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
     }
 
     private void showReportIssueConfirmationDialog() {
@@ -1243,18 +1256,24 @@ public class MainActivity extends AppCompatActivity {
         allChip.setText("All");
         allChip.setCheckable(true);
         allChip.setChecked(true);
-        allChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B")));
+        allChip.setChipBackgroundColor(CHIP_BG_COLOR);
         allChip.setTextColor(Color.parseColor("#F8FAFC"));
-        allChip.setOnClickListener(v -> adapter.filterBy("", getFilterCity()));
+        allChip.setOnClickListener(v -> {
+            hideSoftKeyboard();
+            adapter.filterBy("", getFilterCity());
+        });
         chipGroupCategories.addView(allChip);
 
         Chip emergencyChip = new Chip(this);
         emergencyChip.setText("24/7 Emergency");
         emergencyChip.setCheckable(true);
         emergencyChip.setChipIconResource(R.drawable.ic_info);
-        emergencyChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#312E81")));
+        emergencyChip.setChipBackgroundColor(CHIP_EMERGENCY_BG_COLOR);
         emergencyChip.setTextColor(Color.parseColor("#818CF8"));
-        emergencyChip.setOnClickListener(v -> adapter.filterBy("24/7 Emergency", getFilterCity()));
+        emergencyChip.setOnClickListener(v -> {
+            hideSoftKeyboard();
+            adapter.filterBy("24/7 Emergency", getFilterCity());
+        });
         chipGroupCategories.addView(emergencyChip);
 
         Set<String> categories = new LinkedHashSet<>();
@@ -1268,9 +1287,12 @@ public class MainActivity extends AppCompatActivity {
             Chip categoryChip = new Chip(this);
             categoryChip.setText(categoryName);
             categoryChip.setCheckable(true);
-            categoryChip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B")));
+            categoryChip.setChipBackgroundColor(CHIP_BG_COLOR);
             categoryChip.setTextColor(Color.parseColor("#CBD5E1"));
-            categoryChip.setOnClickListener(v -> adapter.filterBy(categoryName, getFilterCity()));
+            categoryChip.setOnClickListener(v -> {
+                hideSoftKeyboard();
+                adapter.filterBy(categoryName, getFilterCity());
+            });
             chipGroupCategories.addView(categoryChip);
         }
     }

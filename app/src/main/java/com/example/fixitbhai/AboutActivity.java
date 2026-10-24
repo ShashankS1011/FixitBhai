@@ -38,7 +38,11 @@ public class AboutActivity extends AppCompatActivity {
 
         MaterialCardView cardAppIntro = findViewById(R.id.cardAppIntro);
         if (cardAppIntro != null) {
-            cardAppIntro.setOnClickListener(v -> startActivity(new Intent(AboutActivity.this, IntroActivity.class)));
+            cardAppIntro.setOnClickListener(v -> {
+                Intent intent = new Intent(AboutActivity.this, IntroActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
         }
 
         MaterialCardView cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
