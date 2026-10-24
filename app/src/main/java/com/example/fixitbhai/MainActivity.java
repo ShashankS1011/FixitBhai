@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_SELECTED_CITY = "SelectedCity";
     private static final String ISSUES_URL = "https://github.com/ShashankS1011/FixitBhai/issues/new";
     private static final Gson GSON_INSTANCE = new Gson();
+    private static final Pattern NORMALIZE_PHONE_PATTERN = Pattern.compile("[^0-9]");
     private static final android.content.res.ColorStateList CHIP_BG_COLOR = android.content.res.ColorStateList.valueOf(Color.parseColor("#1E293B"));
     private static final android.content.res.ColorStateList CHIP_EMERGENCY_BG_COLOR = android.content.res.ColorStateList.valueOf(Color.parseColor("#312E81"));
     public static final String KEY_CLOUD_SYNC_PREF = "CloudSyncEnabled";
@@ -1498,7 +1499,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String normalizePhoneNumber(String rawNumber) {
         if (rawNumber == null || rawNumber.trim().isEmpty()) return "";
-        String digitsOnly = rawNumber.replaceAll("[^0-9]", "");
+        String digitsOnly = NORMALIZE_PHONE_PATTERN.matcher(rawNumber).replaceAll("");
         if (digitsOnly.length() > 10 && digitsOnly.startsWith("91")) {
             digitsOnly = digitsOnly.substring(digitsOnly.length() - 10);
         }
