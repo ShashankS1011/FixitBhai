@@ -4,10 +4,13 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class AboutActivity extends AppCompatActivity {
 
@@ -45,6 +48,11 @@ public class AboutActivity extends AppCompatActivity {
             });
         }
 
+        MaterialCardView cardMergeDuplicates = findViewById(R.id.cardMergeDuplicates);
+        if (cardMergeDuplicates != null) {
+            cardMergeDuplicates.setOnClickListener(v -> performDuplicateMerger());
+        }
+
         MaterialCardView cardDeleteAccount = findViewById(R.id.cardDeleteAccount);
         if (cardDeleteAccount != null) {
             cardDeleteAccount.setOnClickListener(v -> confirmAndDeleteUserAccount());
@@ -58,6 +66,20 @@ public class AboutActivity extends AppCompatActivity {
         com.google.android.material.button.MaterialButton btnCheckUpdates = findViewById(R.id.btnCheckUpdates);
         if (btnCheckUpdates != null) {
             btnCheckUpdates.setOnClickListener(v -> UpdateChecker.checkForUpdates(this, true, null));
+        }
+    }
+
+    private void performDuplicateMerger() {
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        int mergedCount = dbHelper.mergeDuplicateContacts();
+        if (mergedCount > 0) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Duplicate Contacts Merged! 🎉")
+                    .setMessage("Scanned local storage and successfully merged " + mergedCount + " duplicate contact entries into clean, unified records.")
+                    .setPositiveButton("Awesome!", (d, w) -> d.dismiss())
+                    .show();
+        } else {
+            Toast.makeText(this, "No duplicate contact numbers found. Your database is 100% clean!", Toast.LENGTH_SHORT).show();
         }
     }
 

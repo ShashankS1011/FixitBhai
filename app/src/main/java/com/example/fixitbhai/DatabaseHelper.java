@@ -7,7 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -377,5 +379,71 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_CONTACTS, KEY_PHONE + "=?", new String[]{phone});
         db.close();
+    }
+
+    public int mergeDuplicateContacts() {
+        List<Contact> allContacts = getAllContacts();
+        Map<String, List<Contact>> groupedByPhone = new HashMap<>();
+
+        for (Contact c : allContacts) {
+            if (c == null) continue;
+            String rawPhone = c.getPhone();
+            if (rawPhone == null || rawPhone.isEmpty()) continue;
+            String cleanPhone = rawPhone.replaceAll("[^0-9]", "");
+            if (cleanPhone.length() >= 10) {
+                cleanPhone = cleanPhone.substring(cleanPhone.length() - 10);
+            }
+            List<Contact> group = groupedByPhone.computeIfAbsent(cleanPhone, k -> new ArrayList<>());
+            group.add(c);
+        }
+
+        int mergedCount = 0;
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            for (Map.Entry<String, List<Contact>> entry : groupedByPhone.entrySet()) {
+                List<Contact> group = entry.getValue();
+                if (group != null && group.size() > 1) {
+                    Contact primary = group.get(0);
+                    StringBuilder mergedNotes = new StringBuilder(primary.getNotes());
+                    boolean emergency = primary.isEmergency();
+                    boolean doNotCall = primary.isDoNotCall();
+                    String city = primary.getCity();
+                    String category = primary.getCategory() != null ? primary.getCategory() : "General";
+
+                    for (int i = 1; i < group.size(); i++) {
+                        Contact dup = group.get(i);
+                        if (!dup.getNotes().isEmpty() && !mergedNotes.toString().contains(dup.getNotes())) {
+                            if (!mergedNotes.toString().isEmpty()) mergedNotes.append(" | ");
+                            mergedNotes.append(dup.getNotes());
+                        }
+                        if (dup.isEmergency()) emergency = true;
+                        if (dup.isDoNotCall()) doNotCall = true;
+                        if ((city.equalsIgnoreCase("Unassigned") || city.isEmpty()) && !dup.getCity().isEmpty() && !dup.getCity().equalsIgnoreCase("Unassigned")) {
+                            city = dup.getCity();
+                        }
+                        if (dup.getCategory() != null && (category.equalsIgnoreCase("General") || category.isEmpty()) && !dup.getCategory().isEmpty()) {
+                            category = dup.getCategory();
+                        }
+
+                        db.delete(TABLE_CONTACTS, KEY_PHONE + "=? OR " + KEY_ID + "=?", new String[]{dup.getPhone(), dup.getId()});
+                        mergedCount++;
+                    }
+
+                    ContentValues values = new ContentValues();
+                    values.put(KEY_CITY, city);
+                    values.put(KEY_CATEGORY, category);
+                    values.put(KEY_NOTES, mergedNotes.toString());
+                    values.put(KEY_IS_EMERGENCY, emergency ? 1 : 0);
+                    values.put(KEY_DO_NOT_CALL, doNotCall ? 1 : 0);
+                    db.update(TABLE_CONTACTS, values, KEY_PHONE + "=?", new String[]{primary.getPhone()});
+                }
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+        return mergedCount;
     }
 }
