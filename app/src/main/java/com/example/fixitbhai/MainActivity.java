@@ -985,20 +985,19 @@ public class MainActivity extends AppCompatActivity {
         try {
             ContentResolver cr = context.getContentResolver();
             Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
-            Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.LOOKUP_KEY}, null, null, null);
-
-            if (cursor != null) {
-                int deletedCount = 0;
-                while (cursor.moveToNext()) {
+            try (Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.LOOKUP_KEY}, null, null, null)) {
+                if (cursor != null) {
+                    int deletedCount = 0;
                     int lookupKeyIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup.LOOKUP_KEY);
-                    if (lookupKeyIdx != -1) {
-                        String lookupKey = cursor.getString(lookupKeyIdx);
-                        Uri lookupUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey);
-                        deletedCount += cr.delete(lookupUri, null, null);
+                    while (cursor.moveToNext()) {
+                        if (lookupKeyIdx != -1 && !cursor.isNull(lookupKeyIdx)) {
+                            String lookupKey = cursor.getString(lookupKeyIdx);
+                            Uri lookupUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey);
+                            deletedCount += cr.delete(lookupUri, null, null);
+                        }
                     }
+                    Log.i("FixitBhai", "Deleted " + deletedCount + " entry/entries from system phonebook for " + phoneNumber);
                 }
-                cursor.close();
-                Log.i("FixitBhai", "Deleted " + deletedCount + " entry/entries from system phonebook for " + phoneNumber);
             }
         } catch (Exception e) {
             Log.e("FixitBhai", "Error deleting contact from system phonebook: " + e.getMessage(), e);

@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.fixitbhai"
         minSdk = 24
         targetSdk = 37
-        versionCode = 103
-        versionName = "28.0.0"
+        versionCode = 104
+        versionName = "29.0.0"
 
         androidResources {
             localeFilters += setOf("en")
