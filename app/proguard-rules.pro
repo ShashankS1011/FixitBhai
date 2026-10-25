@@ -2,6 +2,9 @@
 # ProGuard / R8 Optimization & Keep Rules for FixitBhai
 # ====================================================================
 
+# Enable 3-pass bytecode optimization
+-optimizationpasses 3
+
 # 1. Project Domain Models & Firestore Serialization
 -keep class com.example.fixitbhai.Contact { *; }
 -keepclassmembers class com.example.fixitbhai.** {
