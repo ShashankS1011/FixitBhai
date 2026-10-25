@@ -369,22 +369,24 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             List<Contact> filteredList = new ArrayList<>();
             String categoryPattern = (constraint == null) ? "" : constraint.toString().toLowerCase().trim();
 
+            boolean isEmergencyFilter = categoryPattern.contains("emergency") || categoryPattern.contains("24/7");
+            boolean isAllCategory = categoryPattern.isEmpty() || categoryPattern.equalsIgnoreCase("all");
+            boolean isAllCity = currentCityFilter.isEmpty() || currentCityFilter.equalsIgnoreCase("all") || currentCityFilter.equalsIgnoreCase("all cities");
+            boolean isPrayagrajFilter = currentCityFilter.equalsIgnoreCase("prayagraj") || currentCityFilter.equalsIgnoreCase("allahabad");
+
             for (Contact item : contactListFull) {
-                boolean matchesCategory = categoryPattern.isEmpty()
-                        || categoryPattern.equalsIgnoreCase("all")
-                        || (categoryPattern.contains("emergency") || categoryPattern.contains("24/7") ? item.isEmergency() : false)
+                boolean matchesCategory = isAllCategory
+                        || (isEmergencyFilter && item.isEmergency())
                         || (item.getCategory() != null && item.getCategory().toLowerCase().contains(categoryPattern))
                         || (item.getName() != null && item.getName().toLowerCase().contains(categoryPattern))
                         || (item.getPhone() != null && item.getPhone().replaceAll("[^0-9]", "").contains(categoryPattern))
                         || (item.getNotes() != null && item.getNotes().toLowerCase().contains(categoryPattern))
                         || (item.getReviewTags() != null && item.getReviewTags().toLowerCase().contains(categoryPattern));
 
-                boolean matchesCity = currentCityFilter.isEmpty()
-                        || currentCityFilter.equalsIgnoreCase("all")
-                        || currentCityFilter.equalsIgnoreCase("all cities")
-                        || (item.getCity() != null && (item.getCity().equalsIgnoreCase(currentCityFilter)
-                            || (currentCityFilter.equalsIgnoreCase("prayagraj") && item.getCity().equalsIgnoreCase("allahabad"))
-                            || (currentCityFilter.equalsIgnoreCase("allahabad") && item.getCity().equalsIgnoreCase("prayagraj"))));
+                boolean matchesCity = isAllCity
+                        || (item.getCity().equalsIgnoreCase(currentCityFilter)
+                            || (isPrayagrajFilter && item.getCity().equalsIgnoreCase("allahabad"))
+                            || (isPrayagrajFilter && item.getCity().equalsIgnoreCase("prayagraj")));
 
                 if (matchesCategory && matchesCity) {
                     filteredList.add(item);
