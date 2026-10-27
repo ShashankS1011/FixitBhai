@@ -266,12 +266,18 @@ public class ContactDetailActivity extends AppCompatActivity {
                         imageView.setImageBitmap(bitmap);
                         imageView.setPadding(32, 32, 32, 32);
 
-                        new AlertDialog.Builder(ContactDetailActivity.this)
+                        AlertDialog qrDialog = new AlertDialog.Builder(ContactDetailActivity.this)
                                 .setTitle("Scan to Save " + name)
                                 .setMessage("Scan this QR code with a phone camera to save the contact directly.")
                                 .setView(imageView)
                                 .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
-                                .show();
+                                .create();
+                        qrDialog.setOnDismissListener(dialogInterface -> {
+                            if (bitmap != null && !bitmap.isRecycled()) {
+                                bitmap.recycle();
+                            }
+                        });
+                        qrDialog.show();
                     }
                 });
             } catch (Exception e) {

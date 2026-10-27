@@ -32,7 +32,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_REVIEW_TAGS = "review_tags";
 
     public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context != null ? context.getApplicationContext() : null, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
