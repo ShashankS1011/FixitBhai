@@ -83,7 +83,7 @@ android {
 
 dependencies {
     // Import the Firebase BoM to automatically manage versions
-    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
 
     // Firebase dependencies
     implementation(libs.firebase.auth)
