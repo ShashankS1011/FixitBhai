@@ -12,7 +12,7 @@ firebaseAuth = "25.0.0"
 credentials = "1.6.0"
 credentialsPlayServicesAuth = "1.6.0"
 googleid = "1.2.1"
-firebaseFirestore = "26.6.0"
+firebaseFirestore = "27.1.0"
 navigation = "2.8.8"
 
 [libraries]
