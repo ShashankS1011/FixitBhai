@@ -868,7 +868,7 @@ public class MainActivity extends AppCompatActivity {
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             String choice = cityArray[position];
-            if (choice.contains("Add Custom City")) {
+            if (choice.contains("Request New City") || choice.contains("Add Custom City") || choice.contains("➕")) {
                 dialog.dismiss();
                 showAddCustomCityDialog();
             } else {
@@ -917,16 +917,17 @@ public class MainActivity extends AppCompatActivity {
         etCustomCity.setInputType(android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         tilCustomCity.addView(etCustomCity);
 
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String userEmail = user != null && user.getEmail() != null ? user.getEmail().trim() : "";
+        boolean isAdmin = ContactAdapter.isAdminEmail(userEmail);
+
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Add Custom City")
+                .setTitle(isAdmin ? "Add & Publish New City (Admin)" : "Request New City Addition")
                 .setView(tilCustomCity)
                 .setPositiveButton("Submit City", (dialog, which) -> {
                     String input = etCustomCity.getText() != null ? etCustomCity.getText().toString().trim() : "";
                     if (!input.isEmpty()) {
                         final String newCity = capitalizeWords(input);
-                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                        String userEmail = user != null && user.getEmail() != null ? user.getEmail().trim() : "";
-                        boolean isAdmin = ContactAdapter.isAdminEmail(userEmail);
 
                         if (isAdmin) {
                             java.util.Map<String, Object> cityMap = new java.util.HashMap<>();
