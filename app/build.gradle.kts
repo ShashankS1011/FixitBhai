@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.fixitbhai"
         minSdk = 24
         targetSdk = 37
-        versionCode = 105
-        versionName = "30.0.0"
+        versionCode = 106
+        versionName = "31.0.0"
 
         androidResources {
             localeFilters += setOf("en")
@@ -83,7 +83,7 @@ android {
 
 dependencies {
     // Import the Firebase BoM to automatically manage versions
-    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
 
     // Firebase dependencies
     implementation(libs.firebase.auth)
