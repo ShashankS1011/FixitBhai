@@ -815,14 +815,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showCitySelectionDialog() {
-        List<String> distinctCities = dbHelper.getDistinctCities();
         List<String> cityList = new ArrayList<>();
         cityList.add("All Cities");
-        for (String c : distinctCities) {
-            if (!cityList.contains(c) && !c.equalsIgnoreCase("Unassigned")) {
-                cityList.add(c);
-            }
-        }
 
         String[] presetCities = {
                 "Gurgaon", "Noida", "Delhi", "Mathura", "Ghaziabad", "Faridabad",
@@ -844,10 +838,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-            cityList.add("➕ Add Custom City...");
+            cityList.add("➕ Request New City...");
             renderCityDialogList(cityList);
         }).addOnFailureListener(e -> {
-            cityList.add("➕ Add Custom City...");
+            cityList.add("➕ Request New City...");
             renderCityDialogList(cityList);
         });
     }
@@ -1004,6 +998,7 @@ public class MainActivity extends AppCompatActivity {
 
                                                 firestore.collection("moderation_requests").add(requestMap)
                                                         .addOnSuccessListener(docRef -> {
+                                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
                                                             new MaterialAlertDialogBuilder(MainActivity.this)
                                                                     .setTitle("City Request Submitted! 🎉")
                                                                     .setMessage("Your request to add city '" + newCity + "' has been submitted successfully.\n\nIt is now waiting for admin approval before showing globally.")
@@ -1011,10 +1006,8 @@ public class MainActivity extends AppCompatActivity {
                                                                     .show();
                                                         })
                                                         .addOnFailureListener(e -> {
-                                                            selectedCity = newCity;
-                                                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
-                                                            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
-                                                            Toast.makeText(MainActivity.this, "City set locally to " + newCity, Toast.LENGTH_SHORT).show();
+                                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                                            Toast.makeText(MainActivity.this, "Failed to submit city request. Please check your internet connection.", Toast.LENGTH_SHORT).show();
                                                         });
                                             }
                                         })
