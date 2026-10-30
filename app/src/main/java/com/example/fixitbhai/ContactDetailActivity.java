@@ -20,6 +20,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.zxing.BarcodeFormat;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ContactDetailActivity extends AppCompatActivity {
 
     private TextView tvName, tvPhone, tvCategory, tvWarningBadge;
@@ -127,16 +130,84 @@ public class ContactDetailActivity extends AppCompatActivity {
         if (btnDelete != null) btnDelete.setOnClickListener(v -> confirmAndDeleteContact());
     }
 
-    private void saveContactChanges() {
-        float rating = 0.0f;
-        String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
-        boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
-        boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
-        String oldCity = originalCity;
-        if (etCity != null && !etCity.getText().toString().trim().isEmpty()) {
-            city = etCity.getText().toString().trim();
-        }
+    private static final String[] PRESET_CITIES = {
+            "Gurgaon", "Noida", "Delhi", "Mathura", "Ghaziabad", "Faridabad",
+            "Prayagraj", "Chennai", "Lucknow", "Mumbai", "Bengaluru", "Hyderabad",
+            "Kolkata", "Pune", "Jaipur", "Kanpur", "Varanasi", "Indore", "Surat", "Unassigned"
+    };
 
+    private boolean isApprovedCity(String cityName, List<String> publicCities) {
+        if (cityName == null || cityName.trim().isEmpty() || cityName.equalsIgnoreCase("Unassigned")) return true;
+        for (String preset : PRESET_CITIES) {
+            if (preset.equalsIgnoreCase(cityName.trim())) return true;
+        }
+        if (publicCities != null) {
+            for (String pub : publicCities) {
+                if (pub.equalsIgnoreCase(cityName.trim())) return true;
+            }
+        }
+        return false;
+    }
+
+    private void saveContactChanges() {
+        if (isFinishing() || isDestroyed()) return;
+        final float rating = 0.0f;
+        final String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
+        final boolean isDoNotCall = cbDoNotCall != null && cbDoNotCall.isChecked();
+        final boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
+        final String oldCity = originalCity;
+        String enteredCity = etCity != null ? etCity.getText().toString().trim() : "";
+        if (enteredCity.isEmpty()) enteredCity = "Unassigned";
+
+        final String finalEnteredCity = enteredCity;
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String userEmail = user != null && user.getEmail() != null ? user.getEmail().trim() : "";
+        boolean isAdmin = ContactAdapter.isAdminEmail(userEmail);
+
+        firestore.collection("public_cities").get().addOnSuccessListener(snapshots -> {
+            List<String> publicCities = new ArrayList<>();
+            if (snapshots != null && !snapshots.isEmpty()) {
+                for (com.google.firebase.firestore.DocumentSnapshot doc : snapshots) {
+                    String pubName = doc.getString("name");
+                    if (pubName != null) publicCities.add(pubName.trim());
+                }
+            }
+
+            if (isAdmin || isApprovedCity(finalEnteredCity, publicCities)) {
+                executeSaveContactChanges(finalEnteredCity, oldCity, rating, notes, isDoNotCall, isEmergency);
+            } else {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(ContactDetailActivity.this)
+                        .setTitle("Unapproved City Location 🌆")
+                        .setMessage("City '" + finalEnteredCity + "' is not yet in the approved public city directory.\n\nWould you like to submit a request to the admin to add '" + finalEnteredCity + "' to the official city list?")
+                        .setPositiveButton("Submit Request", (dialog, which) -> {
+                            if (user != null) {
+                                java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+                                requestMap.put("action", "ADD_CITY");
+                                requestMap.put("city", finalEnteredCity);
+                                requestMap.put("name", finalEnteredCity);
+                                requestMap.put("uploaderEmail", userEmail);
+                                requestMap.put("uploaderUid", user.getUid());
+                                requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                                requestMap.put("status", "PENDING");
+
+                                firestore.collection("moderation_requests").add(requestMap)
+                                        .addOnSuccessListener(docRef -> {
+                                            Toast.makeText(ContactDetailActivity.this, "City request submitted to admin for approval!", Toast.LENGTH_SHORT).show();
+                                            executeSaveContactChanges(oldCity, oldCity, rating, notes, isDoNotCall, isEmergency);
+                                        })
+                                        .addOnFailureListener(e -> executeSaveContactChanges(oldCity, oldCity, rating, notes, isDoNotCall, isEmergency));
+                            } else {
+                                executeSaveContactChanges(oldCity, oldCity, rating, notes, isDoNotCall, isEmergency);
+                            }
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .show();
+            }
+        }).addOnFailureListener(e -> executeSaveContactChanges(finalEnteredCity, oldCity, rating, notes, isDoNotCall, isEmergency));
+    }
+
+    private void executeSaveContactChanges(String targetCity, String oldCity, float rating, String notes, boolean isDoNotCall, boolean isEmergency) {
+        city = targetCity;
         // 1. Update SQLite Local Storage
         dbHelper.updateContactCityAndDetails(phone, city, rating, notes, isDoNotCall, isEmergency, "");
 
@@ -154,11 +225,8 @@ public class ContactDetailActivity extends AppCompatActivity {
             updatedContact.setVerified(true);
 
             String cleanPhone = phone.replaceAll("[^0-9+]", "");
-
-            // Save to user's private cloud backup
             firestore.collection("users").document(user.getUid()).collection("contacts").document(cleanPhone).set(updatedContact.toMap());
 
-            // ONLY update the public shared city directory if this contact was explicitly published as a cloud contact
             if (isCloud) {
                 if (oldCity != null && !oldCity.isEmpty() && !oldCity.equalsIgnoreCase(city)) {
                     firestore.collection("cities").document(oldCity).collection("contacts").document(cleanPhone).delete();
