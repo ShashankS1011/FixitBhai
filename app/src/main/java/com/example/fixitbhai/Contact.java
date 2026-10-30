@@ -110,8 +110,18 @@ public class Contact implements Serializable {
     public void setCategory(@Nullable String category) { this.category = category; }
 
     @NonNull
-    public String getCity() { return (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
-    public void setCity(@Nullable String city) { this.city = (city != null && !city.trim().isEmpty() && !city.equalsIgnoreCase("General")) ? city.trim() : "Unassigned"; }
+    public static String sanitizeCityName(@Nullable String rawCity) {
+        if (rawCity == null || rawCity.trim().isEmpty()) return "Unassigned";
+        String cleaned = rawCity.replaceAll("[^\\p{L}\\s.-]", "").trim().replaceAll("\\s+", " ");
+        if (cleaned.isEmpty() || cleaned.equalsIgnoreCase("General") || cleaned.equalsIgnoreCase("Unassigned")) {
+            return "Unassigned";
+        }
+        return cleaned;
+    }
+
+    @NonNull
+    public String getCity() { return sanitizeCityName(city); }
+    public void setCity(@Nullable String city) { this.city = sanitizeCityName(city); }
 
     public float getRating() { return rating; }
     public void setRating(float rating) { this.rating = rating; }

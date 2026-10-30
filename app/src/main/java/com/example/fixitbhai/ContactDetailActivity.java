@@ -157,7 +157,7 @@ public class ContactDetailActivity extends AppCompatActivity {
         final boolean isEmergency = cbEmergency != null && cbEmergency.isChecked();
         final String oldCity = originalCity;
         String enteredCity = etCity != null ? etCity.getText().toString().trim() : "";
-        if (enteredCity.isEmpty()) enteredCity = "Unassigned";
+        enteredCity = Contact.sanitizeCityName(enteredCity);
 
         final String finalEnteredCity = enteredCity;
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();

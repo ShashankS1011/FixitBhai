@@ -926,105 +926,108 @@ public class MainActivity extends AppCompatActivity {
                 .setView(tilCustomCity)
                 .setPositiveButton("Submit City", (dialog, which) -> {
                     String input = etCustomCity.getText() != null ? etCustomCity.getText().toString().trim() : "";
-                    if (!input.isEmpty()) {
-                        final String newCity = capitalizeWords(input);
+                    String sanitized = Contact.sanitizeCityName(input);
+                    if (sanitized.equalsIgnoreCase("Unassigned")) {
+                        Toast.makeText(MainActivity.this, "Please enter a valid city name without emojis or special symbols.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    final String newCity = capitalizeWords(sanitized);
 
-                        if (isAdmin) {
-                            java.util.Map<String, Object> cityMap = new java.util.HashMap<>();
-                            cityMap.put("name", newCity);
-                            cityMap.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
-                            firestore.collection("public_cities").document(newCity).set(cityMap);
+                    if (isAdmin) {
+                        java.util.Map<String, Object> cityMap = new java.util.HashMap<>();
+                        cityMap.put("name", newCity);
+                        cityMap.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                        firestore.collection("public_cities").document(newCity).set(cityMap);
 
-                            selectedCity = newCity;
-                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
-                            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
-                            Toast.makeText(MainActivity.this, "City " + newCity + " published for all users!", Toast.LENGTH_SHORT).show();
-                        } else if (user != null) {
-                            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+                        selectedCity = newCity;
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                        if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
+                        Toast.makeText(MainActivity.this, "City " + newCity + " published for all users!", Toast.LENGTH_SHORT).show();
+                    } else if (user != null) {
+                        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
-                            firestore.collection("public_cities").get().addOnSuccessListener(publicSnapshots -> {
-                                boolean existsInPublic = false;
-                                if (publicSnapshots != null && !publicSnapshots.isEmpty()) {
-                                    for (DocumentSnapshot doc : publicSnapshots) {
-                                        String name = doc.getString("name");
-                                        if (name != null && name.equalsIgnoreCase(newCity)) {
-                                            existsInPublic = true;
-                                            break;
-                                        }
+                        firestore.collection("public_cities").get().addOnSuccessListener(publicSnapshots -> {
+                            boolean existsInPublic = false;
+                            if (publicSnapshots != null && !publicSnapshots.isEmpty()) {
+                                for (DocumentSnapshot doc : publicSnapshots) {
+                                    String name = doc.getString("name");
+                                    if (name != null && name.equalsIgnoreCase(newCity)) {
+                                        existsInPublic = true;
+                                        break;
                                     }
                                 }
+                            }
 
-                                if (existsInPublic) {
-                                    if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                    new MaterialAlertDialogBuilder(MainActivity.this)
-                                            .setTitle("City Already Exists! 🏙️")
-                                            .setMessage("City '" + newCity + "' is already published in the public directory and available in the selection list.")
-                                            .setPositiveButton("Got it", null)
-                                            .show();
-                                    return;
-                                }
+                            if (existsInPublic) {
+                                if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                new MaterialAlertDialogBuilder(MainActivity.this)
+                                        .setTitle("City Already Exists! 🏙️")
+                                        .setMessage("City '" + newCity + "' is already published in the public directory and available in the selection list.")
+                                        .setPositiveButton("Got it", null)
+                                        .show();
+                                return;
+                            }
 
-                                firestore.collection("moderation_requests")
-                                        .whereEqualTo("action", "ADD_CITY")
-                                        .whereEqualTo("status", "PENDING")
-                                        .get()
-                                        .addOnSuccessListener(reqSnapshots -> {
-                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                            boolean pendingExists = false;
-                                            if (reqSnapshots != null && !reqSnapshots.isEmpty()) {
-                                                for (DocumentSnapshot doc : reqSnapshots) {
-                                                    String reqCity = doc.getString("city");
-                                                    if (reqCity != null && reqCity.equalsIgnoreCase(newCity)) {
-                                                        pendingExists = true;
-                                                        break;
-                                                    }
+                            firestore.collection("moderation_requests")
+                                    .whereEqualTo("action", "ADD_CITY")
+                                    .whereEqualTo("status", "PENDING")
+                                    .get()
+                                    .addOnSuccessListener(reqSnapshots -> {
+                                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                        boolean pendingExists = false;
+                                        if (reqSnapshots != null && !reqSnapshots.isEmpty()) {
+                                            for (DocumentSnapshot doc : reqSnapshots) {
+                                                String reqCity = doc.getString("city");
+                                                if (reqCity != null && reqCity.equalsIgnoreCase(newCity)) {
+                                                    pendingExists = true;
+                                                    break;
                                                 }
                                             }
+                                        }
 
-                                            if (pendingExists) {
-                                                new MaterialAlertDialogBuilder(MainActivity.this)
-                                                        .setTitle("Request Already Sent! ⏳")
-                                                        .setMessage("A request to add city '" + newCity + "' has already been sent to the admin and is currently pending review.")
-                                                        .setPositiveButton("Got it", null)
-                                                        .show();
-                                            } else {
-                                                java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
-                                                requestMap.put("action", "ADD_CITY");
-                                                requestMap.put("city", newCity);
-                                                requestMap.put("name", newCity);
-                                                requestMap.put("uploaderEmail", userEmail);
-                                                requestMap.put("uploaderUid", user.getUid());
-                                                requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
-                                                requestMap.put("status", "PENDING");
+                                        if (pendingExists) {
+                                            new MaterialAlertDialogBuilder(MainActivity.this)
+                                                    .setTitle("Request Already Sent! ⏳")
+                                                    .setMessage("A request to add city '" + newCity + "' has already been sent to the admin and is currently pending review.")
+                                                    .setPositiveButton("Got it", null)
+                                                    .show();
+                                        } else {
+                                            java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+                                            requestMap.put("action", "ADD_CITY");
+                                            requestMap.put("city", newCity);
+                                            requestMap.put("name", newCity);
+                                            requestMap.put("uploaderEmail", userEmail);
+                                            requestMap.put("uploaderUid", user.getUid());
+                                            requestMap.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+                                            requestMap.put("status", "PENDING");
 
-                                                firestore.collection("moderation_requests").add(requestMap)
-                                                        .addOnSuccessListener(docRef -> {
-                                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                                            new MaterialAlertDialogBuilder(MainActivity.this)
-                                                                    .setTitle("City Request Submitted! 🎉")
-                                                                    .setMessage("Your request to add city '" + newCity + "' has been submitted successfully.\n\nIt is now waiting for admin approval before showing globally.")
-                                                                    .setPositiveButton("Got it", null)
-                                                                    .show();
-                                                        })
-                                                        .addOnFailureListener(e -> {
-                                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                                            Toast.makeText(MainActivity.this, "Failed to submit city request. Please check your internet connection.", Toast.LENGTH_SHORT).show();
-                                                        });
-                                            }
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(MainActivity.this, "Failed checking pending requests: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                        });
-                            }).addOnFailureListener(e -> {
-                                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                                Toast.makeText(MainActivity.this, "Failed checking public cities: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            });
-                        } else {
-                            selectedCity = newCity;
-                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
-                            if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
-                        }
+                                            firestore.collection("moderation_requests").add(requestMap)
+                                                    .addOnSuccessListener(docRef -> {
+                                                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                                        new MaterialAlertDialogBuilder(MainActivity.this)
+                                                                .setTitle("City Request Submitted! 🎉")
+                                                                .setMessage("Your request to add city '" + newCity + "' has been submitted successfully.\n\nIt is now waiting for admin approval before showing globally.")
+                                                                .setPositiveButton("Got it", null)
+                                                                .show();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                                        Toast.makeText(MainActivity.this, "Failed to submit city request. Please check your internet connection.", Toast.LENGTH_SHORT).show();
+                                                    });
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+                                        Toast.makeText(MainActivity.this, "Failed checking pending requests: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                        }).addOnFailureListener(e -> {
+                            if (progressBar != null) progressBar.setVisibility(View.GONE);
+                            Toast.makeText(MainActivity.this, "Failed checking public cities: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        selectedCity = newCity;
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(KEY_SELECTED_CITY, selectedCity).apply();
+                        if (chipCitySelect != null) chipCitySelect.setText("City: " + selectedCity);
                     }
                 })
                 .setNegativeButton("Cancel", null)
