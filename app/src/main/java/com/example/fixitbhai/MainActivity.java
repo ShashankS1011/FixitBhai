@@ -321,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showReportIssueConfirmationDialog() {
+        if (isFinishing() || isDestroyed()) return;
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Report Issue / Submit Feedback")
                 .setMessage("Do you want to report an issue or submit feedback for FixitBhai?\n\nYou will now be redirected to our GitHub repository issue page in your web browser.")
@@ -336,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAdminCrashLogsDialog() {
+        if (isFinishing() || isDestroyed()) return;
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String lastCrash = prefs.getString("KEY_LAST_CRASH_LOG", "No recent crashes recorded by Crashlytics.");
 
@@ -851,6 +853,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void renderCityDialogList(List<String> cityList) {
+        if (isFinishing() || isDestroyed()) return;
         final String[] cityArray = cityList.toArray(new String[0]);
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_city_select, null);
@@ -911,6 +914,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAddCustomCityDialog() {
+        if (isFinishing() || isDestroyed()) return;
         com.google.android.material.textfield.TextInputLayout tilCustomCity = new com.google.android.material.textfield.TextInputLayout(this);
         tilCustomCity.setHint("Enter City Name (e.g. Mathura, Agra)");
         tilCustomCity.setPadding(32, 16, 32, 16);
